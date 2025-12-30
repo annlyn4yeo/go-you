@@ -10,27 +10,20 @@ const NAV_ITEMS = [
   { label: "Settings", href: "/app/settings" },
 ];
 
-export default function AppLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   return (
     <div className="min-h-screen grid grid-cols-[240px_1fr]">
       <aside className="border-r border-[var(--divider)] p-4">
         <nav className="space-y-6">
-          <div className="text-sm font-bold tracking-wide">
-            WORKOUT
-          </div>
+          <div className="text-sm font-bold tracking-wide">WORKOUT</div>
 
           <ul className="space-y-2 text-sm">
             {NAV_ITEMS.map((item) => {
               const isActive =
                 pathname === item.href ||
-                (item.href !== "/app" &&
-                  pathname.startsWith(item.href));
+                (item.href !== "/app" && pathname.startsWith(item.href));
 
               return (
                 <li key={item.href}>
