@@ -1,11 +1,58 @@
 "use client";
 
 import { signIn } from "next-auth/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function AuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!error) return;
+
+    function handleClearError() {
+      setError(null);
+    }
+
+    document.addEventListener("click", handleClearError);
+
+    return () => {
+      document.removeEventListener("click", handleClearError);
+    };
+  }, [error]);
+
+  async function handleLogin() {
+    setError(null);
+
+    if (!email || !password) {
+      setError("Email and password are required");
+      return;
+    }
+
+    if (!email.includes("@")) {
+      setError("Enter a valid email address");
+      return;
+    }
+
+    setLoading(true);
+
+    const res = await signIn("credentials", {
+      email,
+      password,
+      redirect: false,
+    });
+
+    setLoading(false);
+
+    if (res?.error) {
+      setError("Invalid email or password");
+      return;
+    }
+
+    window.location.href = "/app";
+  }
 
   return (
     <main className="min-h-screen flex items-center px-5 sm:px-6">
@@ -49,18 +96,15 @@ export default function AuthPage() {
 
           <button
             type="button"
+            disabled={loading}
+            onClick={handleLogin}
             className="w-full bg-[var(--fg)] text-[var(--bg)] py-4 text-sm font-medium tracking-[0.18em] sm:tracking-[0.2em]"
-            onClick={() =>
-              signIn("credentials", {
-                email,
-                password,
-                callbackUrl: "/app",
-              })
-            }
           >
-            ENTER
+            {loading ? "SIGNING IN…" : "ENTER"}
           </button>
         </form>
+
+        {error && <div className="mt-6 text-sm text-red-600">{error}</div>}
 
         <div className="mt-10 text-xs text-[var(--muted)]">
           No account yet. Accounts are created automatically.

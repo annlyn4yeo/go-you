@@ -39,15 +39,6 @@ export async function POST(req: Request) {
 
   const body = await req.json();
 
-  await prisma.user.upsert({
-    where: { id: session.user.id },
-    update: {},
-    create: {
-      id: session.user.id,
-      email: session.user.email,
-    },
-  });
-
   const workout = await prisma.workout.create({
     data: {
       id: body.workout.id,
