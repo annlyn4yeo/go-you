@@ -14,9 +14,18 @@ html,
 body {
   background: var(--bg);
   color: var(--fg);
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: var(--font-sans), system-ui, sans-serif;
 }
 
 * {
   box-sizing: border-box;
+}
+
+::selection {
+  background: var(--fg);
+  color: var(--bg);
+}
+
+input::placeholder {
+  color: var(--muted);
 }

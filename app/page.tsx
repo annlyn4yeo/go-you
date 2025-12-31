@@ -4,32 +4,44 @@ import { signIn } from "next-auth/react";
 
 export default function AuthPage() {
   return (
-    <main className="min-h-screen grid place-items-center px-6">
-      <section className="w-full max-w-md">
-        <h1 className="text-4xl font-bold mb-2">TRACK YOUR WORK.</h1>
+    <main className="min-h-screen flex items-center px-5 sm:px-6">
+      <section className="w-full max-w-[420px] mx-auto sm:translate-y-[-4vh]">
+        <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight leading-[1.05] mb-4">
+          GO—YOU
+        </h1>
 
-        <p className="text-[var(--muted)] mb-8">Sign in to continue</p>
+        <p className="text-base md:text-lg text-[var(--muted)] mb-8 sm:mb-10">
+          Train. Log. Progress.
+        </p>
 
-        <form className="space-y-6">
+        <form className="space-y-8 md:space-y-10">
           <div>
-            <label className="block text-sm mb-1">Email</label>
+            <label className="block text-xs tracking-widest uppercase mb-2 text-[var(--muted)]">
+              Email
+            </label>
             <input
+              id="email"
+              autoComplete="false"
               type="email"
-              className="w-full border border-[var(--divider)] px-3 py-2 outline-none"
+              className="w-full h-12 border border-[var(--fg)] bg-transparent px-4 text-base leading-none outline-none"
             />
           </div>
 
           <div>
-            <label className="block text-sm mb-1">Password</label>
+            <label className="block text-xs tracking-widest uppercase mb-2 text-[var(--muted)]">
+              Password
+            </label>
             <input
+              id="pwd"
               type="password"
-              className="w-full border border-[var(--divider)] px-3 py-2 outline-none"
+              autoComplete="false"
+              className="w-full h-12 border border-[var(--fg)] bg-transparent px-4 text-base leading-none outline-none"
             />
           </div>
 
           <button
             type="button"
-            className="w-full border border-[var(--fg)] py-2 font-medium"
+            className="w-full bg-[var(--fg)] text-[var(--bg)] py-4 text-sm font-medium tracking-[0.18em] sm:tracking-[0.2em]"
             onClick={() =>
               signIn("credentials", {
                 email: "user@example.com",
@@ -38,11 +50,13 @@ export default function AuthPage() {
               })
             }
           >
-            LOG IN
+            ENTER
           </button>
         </form>
 
-        <div className="mt-6 text-sm text-[var(--muted)]">No account yet.</div>
+        <div className="mt-10 text-xs text-[var(--muted)]">
+          No account yet. Accounts are created automatically.
+        </div>
       </section>
     </main>
   );
