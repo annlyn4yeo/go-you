@@ -1,3 +1,7 @@
+"use client";
+
+import { signIn } from "next-auth/react";
+
 export default function AuthPage() {
   return (
     <main className="min-h-screen grid place-items-center px-6">
@@ -26,16 +30,19 @@ export default function AuthPage() {
           <button
             type="button"
             className="w-full border border-[var(--fg)] py-2 font-medium"
+            onClick={() =>
+              signIn("credentials", {
+                email: "user@example.com",
+                password: "demo",
+                callbackUrl: "/app",
+              })
+            }
           >
             LOG IN
           </button>
         </form>
 
         <div className="mt-6 text-sm text-[var(--muted)]">No account yet.</div>
-
-        <a href="/app" className="inline-block mt-4 text-sm underline">
-          Continue without auth
-        </a>
       </section>
     </main>
   );

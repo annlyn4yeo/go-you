@@ -1,60 +1,149 @@
 "use client";
-
+import { useSession } from "next-auth/react";
 import { useWorkoutStore } from "@/state/workoutStore";
 
+const EXERCISES = [
+  { id: "squat", name: "Squat" },
+  { id: "bench", name: "Bench Press" },
+  { id: "deadlift", name: "Deadlift" },
+];
+
 export default function DashboardPage() {
-  const { activeWorkout, startWorkout, endWorkout } = useWorkoutStore();
+  const { activeWorkout, startWorkout, endWorkout, addExercise, addSet } =
+    useWorkoutStore();
 
-  return (
-    <section className="space-y-8">
-      <header>
-        <h1 className="text-3xl font-bold">Dashboard</h1>
-        <div className="text-[var(--muted)] text-sm">No active workout</div>
-      </header>
+  const { data: session } = useSession();
 
-      <section className="border-t border-[var(--divider)] pt-6">
-        <div className="grid grid-cols-3 gap-6">
-          <div>
-            <div className="text-sm text-[var(--muted)]">TOTAL TIME</div>
-            <div className="text-2xl font-bold">0 MIN</div>
-          </div>
+  async function handleEndWorkout() {
+    if (!activeWorkout) return;
+    if (!session?.user?.id) return;
 
-          <div>
-            <div className="text-sm text-[var(--muted)]">TOTAL VOLUME</div>
-            <div className="text-2xl font-bold">0 KG</div>
-          </div>
+    await fetch("/api/workouts", {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        workout: {
+          id: activeWorkout.workout.id,
+          startedAt: activeWorkout.workout.startedAt,
+          endedAt: new Date().toISOString(),
+        },
+        exercises: activeWorkout.exercises,
+        sets: activeWorkout.sets,
+      }),
+    });
 
-          <div>
-            <div className="text-sm text-[var(--muted)]">
-              SESSIONS THIS WEEK
-            </div>
-            <div className="text-2xl font-bold">0</div>
-          </div>
-        </div>
-      </section>
+    endWorkout();
+  }
 
-      <section className="border-t border-[var(--divider)] pt-6">
-        {!activeWorkout ? (
+  // IDLE STATE — NO ACTIVE WORKOUT
+  if (!activeWorkout) {
+    return (
+      <section className="space-y-8">
+        <header>
+          <h1 className="text-3xl font-bold">Dashboard</h1>
+          <div className="text-[var(--muted)] text-sm">No active workout</div>
+        </header>
+
+        <section className="border-t border-[var(--divider)] pt-6">
           <button
             type="button"
             className="border border-[var(--fg)] px-6 py-2 font-medium"
-            onClick={() => startWorkout("demo-user")}
+            onClick={() => {
+              if (!session?.user?.id) return;
+              startWorkout(session.user.id);
+            }}
           >
             START WORKOUT
           </button>
-        ) : (
-          <div className="space-y-2">
-            <div className="font-medium">Workout in progress</div>
+        </section>
+      </section>
+    );
+  }
 
+  // LIVE WORKOUT STATE
+  return (
+    <section className="space-y-8">
+      <header className="space-y-1">
+        <h1 className="text-3xl font-bold">Workout in progress</h1>
+        <div className="text-sm text-[var(--muted)]">Logging live session</div>
+      </header>
+
+      {/* ADD EXERCISE */}
+      <section className="border-t border-[var(--divider)] pt-6">
+        <div className="text-sm font-medium mb-3">Add exercise</div>
+
+        <div className="flex gap-2">
+          {EXERCISES.map((ex) => (
             <button
+              key={ex.id}
               type="button"
-              className="border border-[var(--divider)] px-4 py-1 text-sm"
-              onClick={endWorkout}
+              className="border border-[var(--divider)] px-3 py-1 text-sm"
+              onClick={() => addExercise(ex.id)}
             >
-              END WORKOUT
+              {ex.name}
             </button>
+          ))}
+        </div>
+      </section>
+
+      {/* EXERCISES IN WORKOUT */}
+      <section className="space-y-6">
+        {activeWorkout.exercises.length === 0 && (
+          <div className="text-sm text-[var(--muted)]">
+            No exercises added yet
           </div>
         )}
+
+        {activeWorkout.exercises.map((exercise) => {
+          const sets = activeWorkout.sets.filter(
+            (s) => s.exerciseInstanceId === exercise.id
+          );
+
+          return (
+            <div
+              key={exercise.id}
+              className="border-t border-[var(--divider)] pt-4 space-y-3"
+            >
+              <div className="font-medium">
+                {exercise.exerciseId.toUpperCase()}
+              </div>
+
+              {/* SET LIST */}
+              {sets.length > 0 && (
+                <ul className="text-sm space-y-1">
+                  {sets.map((set, index) => (
+                    <li key={set.id}>
+                      Set {index + 1}: {set.reps} × {set.weight} {set.unit}
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              {/* ADD SET */}
+              <button
+                type="button"
+                className="border border-[var(--divider)] px-3 py-1 text-sm"
+                onClick={() => addSet(exercise.id, 5, 60, "kg")}
+              >
+                Add set (5 × 60kg)
+              </button>
+            </div>
+          );
+        })}
+      </section>
+
+      {/* END WORKOUT */}
+      <section className="border-t border-[var(--divider)] pt-6">
+        <button
+          type="button"
+          className="border border-[var(--fg)] px-6 py-2 font-medium"
+          onClick={handleEndWorkout}
+        >
+          END WORKOUT
+        </button>
       </section>
     </section>
   );
