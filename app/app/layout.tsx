@@ -1,50 +1,19 @@
-"use client";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { redirect } from "next/navigation";
+import AppShell from "@/components/AppShell";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+export default async function AppLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const session = await getServerSession(authOptions);
 
-const NAV_ITEMS = [
-  { label: "Dashboard", href: "/app" },
-  { label: "Log", href: "/app/log" },
-  { label: "Stats", href: "/app/stats" },
-  { label: "Settings", href: "/app/settings" },
-];
+  // Redirect to login if not authenticated
+  if (!session?.user) {
+    redirect("/");
+  }
 
-export default function AppLayout({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
-
-  return (
-    <div className="min-h-screen grid grid-cols-[240px_1fr]">
-      <aside className="border-r border-[var(--divider)] p-4">
-        <nav className="space-y-6">
-          <div className="text-sm font-bold tracking-wide">WORKOUT</div>
-
-          <ul className="space-y-2 text-sm">
-            {NAV_ITEMS.map((item) => {
-              const isActive =
-                pathname === item.href ||
-                (item.href !== "/app" && pathname.startsWith(item.href));
-
-              return (
-                <li key={item.href}>
-                  <Link
-                    href={item.href}
-                    className={`block px-2 py-1 ${
-                      isActive
-                        ? "font-semibold text-[var(--fg)]"
-                        : "text-[var(--muted)]"
-                    }`}
-                  >
-                    {item.label}
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        </nav>
-      </aside>
-
-      <main className="p-6">{children}</main>
-    </div>
-  );
+  return <AppShell user={session.user}>{children}</AppShell>;
 }
