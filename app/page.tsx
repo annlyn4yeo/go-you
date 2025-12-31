@@ -1,8 +1,12 @@
 "use client";
 
 import { signIn } from "next-auth/react";
+import { useState } from "react";
 
 export default function AuthPage() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
   return (
     <main className="min-h-screen flex items-center px-5 sm:px-6">
       <section className="w-full max-w-[420px] mx-auto sm:translate-y-[-4vh]">
@@ -23,6 +27,8 @@ export default function AuthPage() {
               id="email"
               autoComplete="false"
               type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               className="w-full h-12 border border-[var(--fg)] bg-transparent px-4 text-base leading-none outline-none"
             />
           </div>
@@ -35,6 +41,8 @@ export default function AuthPage() {
               id="pwd"
               type="password"
               autoComplete="false"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               className="w-full h-12 border border-[var(--fg)] bg-transparent px-4 text-base leading-none outline-none"
             />
           </div>
@@ -44,8 +52,8 @@ export default function AuthPage() {
             className="w-full bg-[var(--fg)] text-[var(--bg)] py-4 text-sm font-medium tracking-[0.18em] sm:tracking-[0.2em]"
             onClick={() =>
               signIn("credentials", {
-                email: "user@example.com",
-                password: "demo",
+                email,
+                password,
                 callbackUrl: "/app",
               })
             }
