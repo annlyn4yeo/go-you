@@ -20,6 +20,13 @@ interface WorkoutState {
     weight: number,
     unit: "kg" | "lb"
   ) => void;
+
+  updateSet: (
+    setId: string,
+    updates: { reps?: number; weight?: number }
+  ) => void;
+
+  removeSet: (setId: string) => void;
 }
 
 const generateId = () => crypto.randomUUID();
@@ -89,6 +96,33 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
       activeWorkout: {
         ...state,
         sets: [...state.sets, entry],
+      },
+    });
+  },
+
+  updateSet: (setId, updates) => {
+    const state = get().activeWorkout;
+    if (!state) return;
+    if (!updates.reps && !updates.weight) return;
+
+    set({
+      activeWorkout: {
+        ...state,
+        sets: state.sets.map((s) =>
+          s.id === setId ? { ...s, ...updates } : s
+        ),
+      },
+    });
+  },
+
+  removeSet: (setId) => {
+    const state = get().activeWorkout;
+    if (!state) return;
+
+    set({
+      activeWorkout: {
+        ...state,
+        sets: state.sets.filter((s) => s.id !== setId),
       },
     });
   },

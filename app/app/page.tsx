@@ -1,6 +1,9 @@
 "use client";
+
 import { useSession } from "next-auth/react";
 import { useWorkoutStore } from "@/state/workoutStore";
+import { useState } from "react";
+import SetRow from "@/components/SetRow";
 
 const EXERCISES = [
   { id: "squat", name: "Squat" },
@@ -9,7 +12,7 @@ const EXERCISES = [
 ];
 
 export default function DashboardPage() {
-  const { activeWorkout, startWorkout, endWorkout, addExercise, addSet } =
+  const { activeWorkout, startWorkout, addExercise, addSet } =
     useWorkoutStore();
 
   const { data: session } = useSession();
@@ -39,13 +42,15 @@ export default function DashboardPage() {
     useWorkoutStore.getState().endWorkout();
   }
 
-  // IDLE STATE — NO ACTIVE WORKOUT
+  // ------------------------
+  // IDLE STATE
+  // ------------------------
   if (!activeWorkout) {
     return (
       <section className="space-y-8">
         <header>
           <h1 className="text-3xl font-bold">Dashboard</h1>
-          <div className="text-[var(--muted)] text-sm">No active workout</div>
+          <div className="text-sm text-[var(--muted)]">No active workout</div>
         </header>
 
         <section className="border-t border-[var(--divider)] pt-6">
@@ -64,7 +69,9 @@ export default function DashboardPage() {
     );
   }
 
-  // LIVE WORKOUT STATE
+  // ------------------------
+  // LIVE WORKOUT
+  // ------------------------
   return (
     <section className="space-y-8">
       <header className="space-y-1">
@@ -90,50 +97,15 @@ export default function DashboardPage() {
         </div>
       </section>
 
-      {/* EXERCISES IN WORKOUT */}
+      {/* EXERCISES */}
       <section className="space-y-6">
-        {activeWorkout.exercises.length === 0 && (
-          <div className="text-sm text-[var(--muted)]">
-            No exercises added yet
-          </div>
-        )}
-
-        {activeWorkout.exercises.map((exercise) => {
-          const sets = activeWorkout.sets.filter(
-            (s) => s.exerciseInstanceId === exercise.id
-          );
-
-          return (
-            <div
-              key={exercise.id}
-              className="border-t border-[var(--divider)] pt-4 space-y-3"
-            >
-              <div className="font-medium">
-                {exercise.exerciseId.toUpperCase()}
-              </div>
-
-              {/* SET LIST */}
-              {sets.length > 0 && (
-                <ul className="text-sm space-y-1">
-                  {sets.map((set, index) => (
-                    <li key={set.id}>
-                      Set {index + 1}: {set.reps} × {set.weight} {set.unit}
-                    </li>
-                  ))}
-                </ul>
-              )}
-
-              {/* ADD SET */}
-              <button
-                type="button"
-                className="border border-[var(--divider)] px-3 py-1 text-sm"
-                onClick={() => addSet(exercise.id, 5, 60, "kg")}
-              >
-                Add set (5 × 60kg)
-              </button>
-            </div>
-          );
-        })}
+        {activeWorkout.exercises.map((exercise) => (
+          <ExerciseBlock
+            key={exercise.id}
+            exercise={exercise}
+            addSet={addSet}
+          />
+        ))}
       </section>
 
       {/* END WORKOUT */}
@@ -147,5 +119,100 @@ export default function DashboardPage() {
         </button>
       </section>
     </section>
+  );
+}
+
+function ExerciseBlock({
+  exercise,
+  addSet,
+}: {
+  exercise: any;
+  addSet: (
+    exerciseInstanceId: string,
+    reps: number,
+    weight: number,
+    unit: "kg" | "lb"
+  ) => void;
+}) {
+  const workout = useWorkoutStore((s) => s.activeWorkout);
+
+  const sets =
+    workout?.sets.filter((s) => s.exerciseInstanceId === exercise.id) ?? [];
+
+  const [reps, setReps] = useState("");
+  const [weight, setWeight] = useState("");
+  const [unit, setUnit] = useState<"kg" | "lb">("kg");
+  const [error, setError] = useState<string | null>(null);
+
+  return (
+    <div className="border-t border-[var(--divider)] pt-6 space-y-4">
+      <div className="font-medium">{exercise.exerciseId.toUpperCase()}</div>
+
+      {sets.length > 0 && (
+        <ul className="space-y-1">
+          {sets.map((set, index) => (
+            <SetRow key={set.id} set={set} index={index} />
+          ))}
+        </ul>
+      )}
+
+      <div className="space-y-2">
+        <div className="flex gap-2 items-center">
+          <input
+            type="number"
+            placeholder="Reps"
+            value={reps}
+            onChange={(e) => setReps(e.target.value)}
+            className="w-20 border border-[var(--divider)] px-3 py-2 text-sm leading-none outline-none focus:border-[var(--fg)]"
+          />
+
+          <input
+            type="number"
+            placeholder="Weight"
+            value={weight}
+            onChange={(e) => setWeight(e.target.value)}
+            className="w-20 border border-[var(--divider)] px-3 py-2 text-sm leading-none outline-none focus:border-[var(--fg)]"
+          />
+
+          <select
+            value={unit}
+            onChange={(e) => setUnit(e.target.value as "kg" | "lb")}
+            className="border border-[var(--divider)] px-2 py-2 text-sm bg-transparent"
+          >
+            <option value="kg">kg</option>
+            <option value="lb">lb</option>
+          </select>
+
+          <button
+            type="button"
+            className="border border-[var(--fg)] px-3 py-2 text-sm"
+            onClick={() => {
+              const repsNum = Number(reps);
+              const weightNum = Number(weight);
+
+              if (!repsNum || repsNum <= 0) {
+                setError("Reps must be greater than 0");
+                return;
+              }
+
+              if (!weightNum || weightNum <= 0) {
+                setError("Weight must be greater than 0");
+                return;
+              }
+
+              addSet(exercise.id, repsNum, weightNum, unit);
+
+              setReps("");
+              setWeight("");
+              setError(null);
+            }}
+          >
+            Add Set
+          </button>
+        </div>
+
+        {error && <div className="text-xs text-red-600">{error}</div>}
+      </div>
+    </div>
   );
 }
