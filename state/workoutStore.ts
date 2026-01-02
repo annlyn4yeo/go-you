@@ -29,7 +29,6 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
 
   startWorkout: (userId) => {
     const now = new Date().toISOString();
-
     set({
       activeWorkout: {
         workout: {

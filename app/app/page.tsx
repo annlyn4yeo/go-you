@@ -15,7 +15,8 @@ export default function DashboardPage() {
   const { data: session } = useSession();
 
   async function handleEndWorkout() {
-    if (!activeWorkout) return;
+    const workoutState = useWorkoutStore.getState().activeWorkout;
+    if (!workoutState) return;
     if (!session?.user?.id) return;
 
     await fetch("/api/workouts", {
@@ -26,16 +27,16 @@ export default function DashboardPage() {
       },
       body: JSON.stringify({
         workout: {
-          id: activeWorkout.workout.id,
-          startedAt: activeWorkout.workout.startedAt,
+          id: workoutState.workout.id,
+          startedAt: workoutState.workout.startedAt,
           endedAt: new Date().toISOString(),
         },
-        exercises: activeWorkout.exercises,
-        sets: activeWorkout.sets,
+        exercises: workoutState.exercises,
+        sets: workoutState.sets,
       }),
     });
 
-    endWorkout();
+    useWorkoutStore.getState().endWorkout();
   }
 
   // IDLE STATE — NO ACTIVE WORKOUT
