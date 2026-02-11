@@ -24,13 +24,14 @@ export interface Exercise {
  * An exercise as performed in a workout
  * (same exercise can appear multiple times)
  */
-export interface ExerciseInstance {
-  id: UUID;
-  workoutId: UUID;
-  exerciseId: UUID;
+export type ExerciseInstance = {
+  id: string;
+  workoutId: string;
+  exerciseId: string;
+  label: string;
   order: number;
   variation?: string;
-}
+};
 
 /**
  * Atomic fact — never edited once saved

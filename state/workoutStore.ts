@@ -13,7 +13,7 @@ interface WorkoutState {
   startWorkout: (userId: string) => void;
   endWorkout: () => void;
 
-  addExercise: (exerciseId: string, variation?: string) => void;
+  addExercise: (exerciseId: string, label: string, variation?: string) => void;
   addSet: (
     exerciseInstanceId: string,
     reps: number,
@@ -59,7 +59,7 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
     });
   },
 
-  addExercise: (exerciseId, variation) => {
+  addExercise: (exerciseId, label, variation) => {
     const state = get().activeWorkout;
     if (!state) return;
 
@@ -67,6 +67,7 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
       id: generateId(),
       workoutId: state.workout.id,
       exerciseId,
+      label,
       order: state.exercises.length,
       variation,
     };

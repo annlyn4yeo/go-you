@@ -4,12 +4,7 @@ import { useSession } from "next-auth/react";
 import { useWorkoutStore } from "@/state/workoutStore";
 import { useState } from "react";
 import SetRow from "@/components/SetRow";
-
-const EXERCISES = [
-  { id: "squat", name: "Squat" },
-  { id: "bench", name: "Bench Press" },
-  { id: "deadlift", name: "Deadlift" },
-];
+import AddExerciseInput from "@/components/AddExerciseInput";
 
 export default function DashboardPage() {
   const { activeWorkout, startWorkout, addExercise, addSet } =
@@ -81,20 +76,9 @@ export default function DashboardPage() {
 
       {/* ADD EXERCISE */}
       <section className="border-t border-[var(--divider)] pt-6">
-        <div className="text-sm font-medium mb-3">Add exercise</div>
-
-        <div className="flex gap-2">
-          {EXERCISES.map((ex) => (
-            <button
-              key={ex.id}
-              type="button"
-              className="border border-[var(--divider)] px-3 py-1 text-sm"
-              onClick={() => addExercise(ex.id)}
-            >
-              {ex.name}
-            </button>
-          ))}
-        </div>
+        <AddExerciseInput
+          onAdd={(exerciseId, label) => addExercise(exerciseId, label)}
+        />
       </section>
 
       {/* EXERCISES */}
@@ -131,7 +115,7 @@ function ExerciseBlock({
     exerciseInstanceId: string,
     reps: number,
     weight: number,
-    unit: "kg" | "lb"
+    unit: "kg" | "lb",
   ) => void;
 }) {
   const workout = useWorkoutStore((s) => s.activeWorkout);
@@ -146,8 +130,7 @@ function ExerciseBlock({
 
   return (
     <div className="border-t border-[var(--divider)] pt-6 space-y-4">
-      <div className="font-medium">{exercise.exerciseId.toUpperCase()}</div>
-
+      <div className="font-medium">{exercise.label.toUpperCase()}</div>
       {sets.length > 0 && (
         <ul className="space-y-1">
           {sets.map((set, index) => (
