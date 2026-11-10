@@ -3,6 +3,8 @@ export const dynamic = "force-dynamic";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { cookies, headers } from "next/headers";
+import { formatDateTime, safeTimeZone, TZ_COOKIE } from "@/lib/time";
 
 export default async function WorkoutDetailPage({
   params,
@@ -10,7 +12,7 @@ export default async function WorkoutDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const session = await getServerSession(authOptions);
+  const [session, jar, h] = await Promise.all([getServerSession(authOptions), cookies(), headers()]);
 
   if (!session?.user?.id) {
     return <div>Unauthorized</div>;
@@ -21,6 +23,7 @@ export default async function WorkoutDetailPage({
       id,
       userId: session.user.id,
     },
+    relationLoadStrategy: "join",
     include: {
       exercises: {
         orderBy: { order: "asc" },
@@ -42,7 +45,7 @@ export default async function WorkoutDetailPage({
       <header>
         <h1 className="text-3xl font-bold">Workout</h1>
         <div className="text-sm text-[var(--muted)]">
-          {new Date(workout.startedAt).toLocaleString()}
+          {formatDateTime(workout.startedAt, safeTimeZone(jar.get(TZ_COOKIE)?.value), h.get("accept-language")?.split(",")[0] || undefined)}
         </div>
       </header>
 

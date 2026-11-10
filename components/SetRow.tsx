@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { useWorkoutStore } from "@/state/workoutStore";
+import type { SetEntry } from "@/domain/workout";
 
-export default function SetRow({ set, index }: { set: any; index: number }) {
+export default function SetRow({ set, index }: { set: SetEntry; index: number }) {
   const { updateSet, removeSet } = useWorkoutStore();
 
   const [editingReps, setEditingReps] = useState(false);

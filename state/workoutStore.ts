@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 import { Workout, ExerciseInstance, SetEntry } from "@/domain/workout";
 
 type ActiveWorkout = {
@@ -31,7 +32,10 @@ interface WorkoutState {
 
 const generateId = () => crypto.randomUUID();
 
-export const useWorkoutStore = create<WorkoutState>((set, get) => ({
+// Persisted so a reload, tab eviction or failed save never loses the sets (rehydrated on the dashboard).
+export const useWorkoutStore = create<WorkoutState>()(
+  persist(
+    (set, get) => ({
   activeWorkout: null,
 
   startWorkout: (userId) => {
@@ -127,4 +131,7 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
       },
     });
   },
-}));
+    }),
+    { name: "go-you.active-workout.v1", skipHydration: true },
+  ),
+);

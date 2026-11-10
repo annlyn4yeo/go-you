@@ -61,35 +61,3 @@ export const DEFAULT_TEMPLATES: ProgramTemplate[] = [
     ],
   },
 ];
-
-export const CUSTOM_TEMPLATES_STORAGE_KEY = "go-you.custom-templates.v1";
-
-export function readCustomTemplates(): ProgramTemplate[] {
-  if (typeof window === "undefined") return [];
-
-  try {
-    const raw = window.localStorage.getItem(CUSTOM_TEMPLATES_STORAGE_KEY);
-    if (!raw) return [];
-
-    const parsed = JSON.parse(raw) as ProgramTemplate[];
-    if (!Array.isArray(parsed)) return [];
-
-    return parsed.filter(
-      (item) =>
-        item &&
-        typeof item.id === "string" &&
-        typeof item.name === "string" &&
-        Array.isArray(item.exercises),
-    );
-  } catch {
-    return [];
-  }
-}
-
-export function writeCustomTemplates(templates: ProgramTemplate[]) {
-  if (typeof window === "undefined") return;
-  window.localStorage.setItem(
-    CUSTOM_TEMPLATES_STORAGE_KEY,
-    JSON.stringify(templates),
-  );
-}

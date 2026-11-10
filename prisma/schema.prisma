@@ -1,38 +1,42 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["relationJoins"]
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 model User {
-  id        String   @id
-  email     String   @unique
+  id           String    @id
+  email        String    @unique
   passwordHash String
-  workouts  Workout[]
+  workouts     Workout[]
 }
 
 model Workout {
-  id        String   @id
+  id        String    @id
   userId    String
   startedAt DateTime
   endedAt   DateTime?
 
-  user      User     @relation(fields: [userId], references: [id])
+  user      User               @relation(fields: [userId], references: [id])
   exercises ExerciseInstance[]
+
+  @@index([userId, startedAt])
 }
 
 model ExerciseInstance {
-  id         String   @id
+  id         String  @id
   workoutId  String
   exerciseId String
   order      Int
   variation  String?
 
-  workout    Workout  @relation(fields: [workoutId], references: [id])
-  sets       SetEntry[]
+  workout Workout    @relation(fields: [workoutId], references: [id])
+  sets    SetEntry[]
+
+  @@index([workoutId])
 }
 
 model SetEntry {
@@ -44,5 +48,6 @@ model SetEntry {
   createdAt          DateTime
 
   exerciseInstance ExerciseInstance @relation(fields: [exerciseInstanceId], references: [id])
-}
 
+  @@index([exerciseInstanceId])
+}
