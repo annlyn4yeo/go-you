@@ -7,11 +7,7 @@ import SetRow from "@/components/SetRow";
 import AddExerciseInput from "@/components/AddExerciseInput";
 import Link from "next/link";
 import { DEFAULT_GOALS, readGoals, UserGoals } from "@/lib/goals";
-import {
-  DEFAULT_TEMPLATES,
-  ProgramTemplate,
-  readCustomTemplates,
-} from "@/lib/templates";
+import { DEFAULT_TEMPLATES, ProgramTemplate } from "@/lib/templates";
 
 type WorkoutLogItem = {
   id: string;
@@ -42,20 +38,17 @@ export default function DashboardPage() {
 
   const { data: session } = useSession();
   const [goals, setGoals] = useState<UserGoals>(DEFAULT_GOALS);
-  const [templates, setTemplates] =
-    useState<ProgramTemplate[]>(DEFAULT_TEMPLATES);
+  const templates = DEFAULT_TEMPLATES;
   const [workouts, setWorkouts] = useState<WorkoutLogItem[]>([]);
   const [overviewLoading, setOverviewLoading] = useState(true);
 
   useEffect(() => {
     setGoals(readGoals());
-    setTemplates([...DEFAULT_TEMPLATES, ...readCustomTemplates()]);
   }, []);
 
   useEffect(() => {
     function syncFromStorage() {
       setGoals(readGoals());
-      setTemplates([...DEFAULT_TEMPLATES, ...readCustomTemplates()]);
     }
 
     window.addEventListener("storage", syncFromStorage);
@@ -164,7 +157,7 @@ export default function DashboardPage() {
           </div>
           <h1 className="text-4xl font-black tracking-tight">DASHBOARD</h1>
           <div className="text-sm text-[var(--muted)]">
-            Start blank or launch a template. Keep goals visible.
+            Start blank or launch a template. Track workouts against your goals.
           </div>
         </header>
 
@@ -194,7 +187,7 @@ export default function DashboardPage() {
                 href="/app/settings"
                 className="border border-[var(--divider)] px-5 py-2 text-sm font-bold tracking-wide"
               >
-                EDIT GOALS / TEMPLATES
+                EDIT GOALS
               </Link>
             </div>
 
