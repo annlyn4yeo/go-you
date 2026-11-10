@@ -7,7 +7,6 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 import "./globals.css";
-import Providers from "./providers";
 
 export default function RootLayout({
   children,
@@ -17,7 +16,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={spaceGrotesk.variable}>
       <body>
-        <Providers>{children}</Providers>
+        {children}
       </body>
     </html>
   );

@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
+import { useEffect } from "react";
+import { rememberTimeZone } from "@/lib/time";
 
 const NAV_ITEMS = [
   { label: "Dashboard", href: "/app" },
@@ -19,6 +21,7 @@ export default function AppShell({
   user: { email?: string | null };
 }) {
   const pathname = usePathname();
+  useEffect(rememberTimeZone, []);
 
   return (
     <div className="min-h-screen grid grid-cols-1 md:grid-cols-[240px_1fr]">

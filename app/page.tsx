@@ -1,13 +1,28 @@
 "use client";
 
-import { signIn } from "next-auth/react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { rememberTimeZone } from "@/lib/time";
+
+const getCsrf = () =>
+  fetch("/api/auth/csrf")
+    .then((r) => r.json())
+    .then((d: { csrfToken: string }) => d.csrfToken);
 
 export default function AuthPage() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const csrf = useRef<Promise<string> | null>(null);
+
+  // While the user types: fetch the CSRF token and wake the server + database.
+  useEffect(() => {
+    rememberTimeZone();
+    csrf.current = getCsrf().catch(() => "");
+    fetch("/api/warm").catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (!error) return;
@@ -23,7 +38,8 @@ export default function AuthPage() {
     };
   }, [error]);
 
-  async function handleLogin() {
+  async function handleLogin(e: React.FormEvent) {
+    e.preventDefault();
     setError(null);
 
     if (!email || !password) {
@@ -38,20 +54,26 @@ export default function AuthPage() {
 
     setLoading(true);
 
-    const res = await signIn("credentials", {
-      email,
-      password,
-      redirect: false,
-    });
-
-    setLoading(false);
-
-    if (res?.error) {
-      setError("Invalid email or password");
-      return;
+    try {
+      const csrfToken = (await csrf.current) || (await getCsrf());
+      // The same request next-auth's signIn() makes, without its extra session fetch and page reload.
+      const res = await fetch("/api/auth/callback/credentials", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({ email, password, csrfToken, json: "true" }),
+      });
+      const { url } = (await res.json()) as { url?: string };
+      if (!url || new URL(url, location.href).searchParams.has("error")) {
+        csrf.current = getCsrf().catch(() => "");
+        setError("Invalid email or password");
+        setLoading(false);
+        return;
+      }
+      router.replace("/app");
+    } catch {
+      setError("No connection. Try again.");
+      setLoading(false);
     }
-
-    window.location.href = "/app";
   }
 
   return (
@@ -65,7 +87,7 @@ export default function AuthPage() {
           Train. Log. Progress.
         </p>
 
-        <form className="space-y-8 md:space-y-10">
+        <form className="space-y-8 md:space-y-10" onSubmit={handleLogin}>
           <div>
             <label className="block text-xs tracking-widest uppercase mb-2 text-[var(--muted)]">
               Email
@@ -95,9 +117,8 @@ export default function AuthPage() {
           </div>
 
           <button
-            type="button"
+            type="submit"
             disabled={loading}
-            onClick={handleLogin}
             className="w-full bg-[var(--fg)] text-[var(--bg)] py-4 text-sm font-medium tracking-[0.18em] sm:tracking-[0.2em]"
           >
             {loading ? "SIGNING IN…" : "ENTER"}

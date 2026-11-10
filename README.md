@@ -18,14 +18,14 @@ log sets as you go, then track progress with stats, PRs and weekly/monthly goals
 - [Next.js 16](https://nextjs.org) (App Router) · React 19 · TypeScript
 - Tailwind CSS 3
 - NextAuth v4 (credentials, JWT sessions) · bcrypt
-- Prisma 5 · PostgreSQL ([Neon](https://neon.tech))
+- Prisma 7 (`@prisma/adapter-pg` driver adapter) · PostgreSQL ([Neon](https://neon.tech))
 - Zustand for live workout state
 - Deployed on [Vercel](https://vercel.com)
 
 ## Getting started
 
 ### Prerequisites
-- Node.js 20+
+- Node.js 22+
 - A PostgreSQL database (e.g. a free Neon project)
 
 ### Setup
@@ -42,10 +42,10 @@ NEXTAUTH_SECRET="a-long-random-string"
 NEXTAUTH_URL="http://localhost:3000"
 ```
 
-Create the database tables from the Prisma schema:
+Create the database tables by applying the migrations:
 
 ```bash
-npx prisma db push
+npx prisma migrate deploy
 ```
 
 Run the dev server:
@@ -64,6 +64,7 @@ Open [http://localhost:3000](http://localhost:3000) and sign in with any email a
 | `npm run build` | Generate the Prisma client and build for production |
 | `npm run start` | Start the production server |
 | `npm run lint` | Run ESLint |
+| `npm test` | Run unit tests (Node's built-in test runner) |
 
 ## Project structure
 
@@ -71,12 +72,12 @@ Open [http://localhost:3000](http://localhost:3000) and sign in with any email a
 app/
   page.tsx            Sign-in screen
   app/                Authenticated app: dashboard, log, stats, settings
-  api/                Route handlers: auth, workouts, stats
+  api/                Route handlers: auth, workouts (save), warm-up
 components/           Shared UI (app shell, set row, exercise input)
 domain/               Workout domain types
 state/                Zustand store for the active workout
-lib/                  Auth config, Prisma client, goals and templates
-prisma/               Database schema
+lib/                  Auth, Prisma client, stats, time zones, validation, goals, templates
+prisma/               Database schema and migrations (config in prisma.config.ts)
 ```
 
 ## Contributing
