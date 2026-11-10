@@ -2,12 +2,23 @@
 @tailwind components;
 @tailwind utilities;
 
+/* GO—YOU design tokens (DD-010, DD-027, DD-033). Inversion (fg <-> bg) is the only accent. */
 :root {
   --bg: #ffffff;
   --fg: #000000;
-  --muted: #6b6b6b;
-  --divider: #e5e5e5;
-  --accent: #1f4fff; /* same role as weather app blue */
+  --muted: #6b6b6b; /* 5.3:1 on white */
+  --divider: #e5e5e5; /* structural rules only, never control borders (1.26:1) */
+  --control: var(--fg); /* input and button borders: 21:1 */
+  --danger: #dc2626; /* errors only */
+
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);
+  --dur-press: 100ms;
+  --dur-fast: 160ms;
+  --dur-sheet: 300ms;
+
+  --tap: 44px; /* minimum touch target */
+  --tap-lg: 56px; /* logging controls, rows, bars */
 }
 
 html,
@@ -15,6 +26,7 @@ body {
   background: var(--bg);
   color: var(--fg);
   font-family: var(--font-sans), system-ui, sans-serif;
+  -webkit-tap-highlight-color: transparent;
 }
 
 * {
@@ -28,4 +40,121 @@ body {
 
 input::placeholder {
   color: var(--muted);
+}
+
+/* One visible, on-brand focus ring everywhere (keyboard only). */
+:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 2px;
+}
+
+/* Numbers never jitter. */
+data,
+output,
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+@layer components {
+  /* Press = ink: instant response on pointer-down. */
+  .press {
+    transition: transform var(--dur-press) var(--ease-out);
+  }
+  .press:active:not(:disabled) {
+    transform: scale(0.97);
+  }
+
+  .label {
+    @apply text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted)];
+  }
+
+  .display {
+    @apply font-bold uppercase leading-[0.95] tracking-[-0.02em];
+  }
+
+  .btn {
+    @apply press inline-flex items-center justify-center border border-[var(--control)] px-4 text-sm font-bold uppercase tracking-[0.08em] disabled:border-[var(--divider)] disabled:text-[var(--muted)];
+    min-height: var(--tap);
+  }
+  .btn-primary {
+    @apply bg-[var(--fg)] text-[var(--bg)] disabled:bg-[var(--divider)];
+  }
+  .btn-lg {
+    min-height: var(--tap-lg);
+  }
+
+  /* Ruled micro tag, e.g. "PR". Takes the row's colour, so it works inverted too. */
+  .tag {
+    @apply border border-current px-1.5 py-0.5 text-[10px] font-bold tracking-[0.16em];
+  }
+
+  .field {
+    @apply w-full border border-[var(--control)] bg-transparent px-3 text-base outline-none;
+    min-height: var(--tap);
+  }
+}
+
+/* Set stamp: a new set row flashes inverted once (120ms hold, 160ms return). */
+@keyframes stamp {
+  0%,
+  40% {
+    background: var(--fg);
+    color: var(--bg);
+  }
+  100% {
+    background: transparent;
+  }
+}
+.stamp {
+  animation: stamp 280ms var(--ease-out);
+}
+
+/* Bottom sheet enters and leaves along the same path. */
+.sheet {
+  transition: transform var(--dur-sheet) var(--ease-sheet), opacity var(--dur-sheet) var(--ease-sheet);
+}
+.sheet[data-open="false"] {
+  transform: translateY(100%);
+}
+@starting-style {
+  .sheet[data-open="true"] {
+    transform: translateY(100%);
+  }
+}
+
+/* Undo bar: its rule shrinks over the undo window. */
+@keyframes drain {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+.drain {
+  transform-origin: left;
+  animation: drain 5s linear forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .press:active:not(:disabled) {
+    transform: none;
+  }
+  .sheet,
+  .sheet[data-open="false"] {
+    transform: none;
+    transition: opacity 200ms ease;
+  }
+  .sheet[data-open="false"] {
+    opacity: 0;
+  }
+  @starting-style {
+    .sheet[data-open="true"] {
+      transform: none;
+      opacity: 0;
+    }
+  }
+  .stamp {
+    animation-duration: 200ms;
+  }
 }

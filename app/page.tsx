@@ -24,36 +24,18 @@ export default function AuthPage() {
     fetch("/api/warm").catch(() => {});
   }, []);
 
-  useEffect(() => {
-    if (!error) return;
-
-    function handleClearError() {
-      setError(null);
-    }
-
-    document.addEventListener("click", handleClearError);
-
-    return () => {
-      document.removeEventListener("click", handleClearError);
-    };
-  }, [error]);
+  // The error stays until the user changes what caused it.
+  const edit = (set: (v: string) => void) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    set(e.target.value);
+    setError(null);
+  };
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
-    setError(null);
-
-    if (!email || !password) {
-      setError("Email and password are required");
-      return;
-    }
-
-    if (!email.includes("@")) {
-      setError("Enter a valid email address");
-      return;
-    }
+    if (!email || !password) return setError("Email and password are required.");
+    if (!email.includes("@")) return setError("Enter a valid email address.");
 
     setLoading(true);
-
     try {
       const csrfToken = (await csrf.current) || (await getCsrf());
       // The same request next-auth's signIn() makes, without its extra session fetch and page reload.
@@ -65,7 +47,7 @@ export default function AuthPage() {
       const { url } = (await res.json()) as { url?: string };
       if (!url || new URL(url, location.href).searchParams.has("error")) {
         csrf.current = getCsrf().catch(() => "");
-        setError("Invalid email or password");
+        setError("Invalid email or password.");
         setLoading(false);
         return;
       }
@@ -77,59 +59,53 @@ export default function AuthPage() {
   }
 
   return (
-    <main className="min-h-screen flex items-center px-5 sm:px-6">
-      <section className="w-full max-w-[420px] mx-auto sm:translate-y-[-4vh]">
-        <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight leading-[1.05] mb-4">
-          GO—YOU
-        </h1>
+    <main className="min-h-dvh flex items-center px-4 sm:px-6">
+      <section className="w-full max-w-[420px] mx-auto sm:-translate-y-[4vh]">
+        <h1 className="display text-6xl sm:text-7xl mb-3">GO—YOU</h1>
+        <p className="label mb-10">Train. Log. Progress.</p>
 
-        <p className="text-base md:text-lg text-[var(--muted)] mb-8 sm:mb-10">
-          Train. Log. Progress.
-        </p>
-
-        <form className="space-y-8 md:space-y-10" onSubmit={handleLogin}>
-          <div>
-            <label className="block text-xs tracking-widest uppercase mb-2 text-[var(--muted)]">
+        <form className="space-y-6" onSubmit={handleLogin} noValidate>
+          <div className="space-y-2">
+            <label htmlFor="email" className="label block">
               Email
             </label>
             <input
               id="email"
-              autoComplete="false"
               type="email"
+              autoComplete="email"
+              inputMode="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full h-12 border border-[var(--fg)] bg-transparent px-4 text-base leading-none outline-none"
+              onChange={edit(setEmail)}
+              aria-invalid={!!error}
+              className="field h-12"
             />
           </div>
 
-          <div>
-            <label className="block text-xs tracking-widest uppercase mb-2 text-[var(--muted)]">
+          <div className="space-y-2">
+            <label htmlFor="pwd" className="label block">
               Password
             </label>
             <input
               id="pwd"
               type="password"
-              autoComplete="false"
+              autoComplete="current-password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full h-12 border border-[var(--fg)] bg-transparent px-4 text-base leading-none outline-none"
+              onChange={edit(setPassword)}
+              aria-invalid={!!error}
+              className="field h-12"
             />
           </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-[var(--fg)] text-[var(--bg)] py-4 text-sm font-medium tracking-[0.18em] sm:tracking-[0.2em]"
-          >
+          <button type="submit" disabled={loading} className="btn btn-primary btn-lg w-full tracking-[0.2em]">
             {loading ? "SIGNING IN…" : "ENTER"}
           </button>
+
+          <p role="alert" className="min-h-5 text-sm text-[var(--danger)]">
+            {error}
+          </p>
         </form>
 
-        {error && <div className="mt-6 text-sm text-red-600">{error}</div>}
-
-        <div className="mt-10 text-xs text-[var(--muted)]">
-          No account yet. Accounts are created automatically.
-        </div>
+        <p className="mt-6 text-xs text-[var(--muted)]">New here? Your account is created on first sign-in.</p>
       </section>
     </main>
   );

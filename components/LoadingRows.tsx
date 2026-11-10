@@ -5,7 +5,7 @@ const WIDTHS = ["w-2/5", "w-3/5", "w-1/3", "w-1/2"];
 export default function LoadingRows({ title, rows = 6 }: { title: string; rows?: number }) {
   return (
     <section className="space-y-6" aria-busy="true">
-      <h1 className="text-3xl font-bold tracking-tight text-[var(--muted)]">{title}</h1>
+      <h1 className="display text-5xl text-[var(--muted)]">{title}</h1>
       <p role="status" className="sr-only">
         Loading {title.toLowerCase()}
       </p>
