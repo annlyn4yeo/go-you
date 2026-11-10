@@ -1,7 +1,7 @@
 # GO—YOU
 
 **Train. Log. Progress.** A mobile-first strength-training logger built for the gym floor. Start a workout
-(blank or from a template), log sets with one thumb, and see your PRs the moment they happen.
+(blank, or from routines it learns from your history), log sets with one thumb, and see your PRs the moment they happen.
 
 ## Features
 
@@ -11,7 +11,8 @@
 - **Never lose a set:** the workout in progress is kept on the device through reloads and bad gym Wi-Fi. Removed sets can
   be undone, and a failed save keeps everything with a retry
 - **Finish receipt:** time, sets, volume and PRs for the session, before and after saving
-- **Program templates:** start from built-in Upper / Lower / Push / Pull templates
+- **Earned routines:** after 21 sessions, GO—YOU builds templates (Routine A–D) from the workouts you actually repeat.
+  Progress toward the unlock is tracked on Goals, and unlocked routines start with one tap from Train
 - **Workout log:** every session by month, with full set detail and PR sets marked
 - **Stats:** personal records, workouts, volume, average session, weekly volume trend and top exercises,
   by range (7D / 30D / 90D / ALL) and unit

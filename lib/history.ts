@@ -3,6 +3,7 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { workoutsTag } from "@/lib/stats";
 import { KG_PER_LB } from "@/lib/lift";
+import { buildTemplates, TEMPLATE_UNLOCK_SESSIONS, type ProgramTemplate } from "@/lib/templates";
 
 export type LastSet = { reps: number; weight: number; unit: string };
 export type ExerciseHistory = {
@@ -43,3 +44,25 @@ async function load(userId: string): Promise<ExerciseHistory> {
 
 export const getExerciseHistory = (userId: string) =>
   unstable_cache(() => load(userId), ["history", userId], { tags: [workoutsTag(userId)], revalidate: 3600 })();
+
+export type TemplateProgress = { sessions: number; templates: ProgramTemplate[] };
+
+async function loadTemplates(userId: string): Promise<TemplateProgress> {
+  const [sessions, recent] = await Promise.all([
+    prisma.workout.count({ where: { userId } }),
+    // shortcut: routines are looked for in the last 60 sessions only.
+    prisma.workout.findMany({
+      where: { userId },
+      orderBy: { startedAt: "desc" },
+      take: 60,
+      relationLoadStrategy: "join",
+      select: { exercises: { orderBy: { order: "asc" }, select: { exerciseId: true } } },
+    }),
+  ]);
+  const unlocked = sessions >= TEMPLATE_UNLOCK_SESSIONS;
+  return { sessions, templates: unlocked ? buildTemplates(recent.map((w) => w.exercises.map((e) => e.exerciseId))) : [] };
+}
+
+// Session count + earned templates (empty until unlocked). Cached per user, cleared on every save.
+export const getTemplateProgress = (userId: string) =>
+  unstable_cache(() => loadTemplates(userId), ["templates", userId], { tags: [workoutsTag(userId)], revalidate: 3600 })();

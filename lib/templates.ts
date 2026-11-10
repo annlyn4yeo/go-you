@@ -1,63 +1,36 @@
-export type TemplateExercise = {
-  exerciseId: string;
-  label: string;
-  variation?: string;
-};
+import { exerciseName } from "./lift.ts"; // relative: also loaded by node's test runner, which has no "@/" alias
+
+// Templates are earned: after this many saved sessions, GO—YOU builds them from what the lifter repeats (DD-037).
+export const TEMPLATE_UNLOCK_SESSIONS = 21;
 
 export type ProgramTemplate = {
   id: string;
   name: string;
-  description: string;
-  exercises: TemplateExercise[];
+  timesDone: number;
+  exercises: { exerciseId: string; label: string }[];
 };
 
-export const DEFAULT_TEMPLATES: ProgramTemplate[] = [
-  {
-    id: "upper-a",
-    name: "UPPER A",
-    description: "PRESS + ROW FOCUS",
-    exercises: [
-      { exerciseId: "bench_press", label: "Bench Press" },
-      { exerciseId: "barbell_row", label: "Barbell Row" },
-      { exerciseId: "overhead_press", label: "Overhead Press" },
-      { exerciseId: "lat_pulldown", label: "Lat Pulldown" },
-      { exerciseId: "incline_db_press", label: "Incline DB Press" },
-    ],
-  },
-  {
-    id: "lower-a",
-    name: "LOWER A",
-    description: "SQUAT-DOMINANT DAY",
-    exercises: [
-      { exerciseId: "back_squat", label: "Back Squat" },
-      { exerciseId: "romanian_deadlift", label: "Romanian Deadlift" },
-      { exerciseId: "walking_lunge", label: "Walking Lunge" },
-      { exerciseId: "leg_curl", label: "Leg Curl" },
-      { exerciseId: "standing_calf_raise", label: "Standing Calf Raise" },
-    ],
-  },
-  {
-    id: "push",
-    name: "PUSH",
-    description: "CHEST + SHOULDERS + TRICEPS",
-    exercises: [
-      { exerciseId: "bench_press", label: "Bench Press" },
-      { exerciseId: "incline_db_press", label: "Incline DB Press" },
-      { exerciseId: "overhead_press", label: "Overhead Press" },
-      { exerciseId: "lateral_raise", label: "Lateral Raise" },
-      { exerciseId: "tricep_pushdown", label: "Tricep Pushdown" },
-    ],
-  },
-  {
-    id: "pull",
-    name: "PULL",
-    description: "BACK + BICEPS + POSTERIOR CHAIN",
-    exercises: [
-      { exerciseId: "deadlift", label: "Deadlift" },
-      { exerciseId: "pull_up", label: "Pull Up" },
-      { exerciseId: "barbell_row", label: "Barbell Row" },
-      { exerciseId: "face_pull", label: "Face Pull" },
-      { exerciseId: "barbell_curl", label: "Barbell Curl" },
-    ],
-  },
-];
+// `workouts`: newest first, each the ordered exercise slugs of one session.
+// Same set of exercises = same routine. A routine must repeat to count; most repeated first, ties by recency.
+// shortcut: swapping one exercise makes a new routine (no fuzzy matching); upgrade if users vary their sessions a lot.
+export function buildTemplates(workouts: string[][], max = 4): ProgramTemplate[] {
+  const groups = new Map<string, { order: string[]; count: number }>();
+  for (const ids of workouts) {
+    const order = [...new Set(ids)];
+    if (order.length < 2) continue; // one exercise is not a routine
+    const key = [...order].sort().join("|");
+    const g = groups.get(key);
+    if (g) g.count += 1;
+    else groups.set(key, { order, count: 1 }); // first seen = newest session, so its order is kept
+  }
+  return [...groups.entries()]
+    .filter(([, g]) => g.count >= 2)
+    .sort(([, a], [, b]) => b.count - a.count)
+    .slice(0, max)
+    .map(([key, g], i) => ({
+      id: key,
+      name: `ROUTINE ${String.fromCharCode(65 + i)}`,
+      timesDone: g.count,
+      exercises: g.order.map((exerciseId) => ({ exerciseId, label: exerciseName(exerciseId) })),
+    }));
+}

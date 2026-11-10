@@ -4,20 +4,23 @@ import Link from "next/link";
 import { useState } from "react";
 import { useWorkoutStore } from "@/state/workoutStore";
 import { useGoals } from "@/lib/goals";
-import { DEFAULT_TEMPLATES, ProgramTemplate } from "@/lib/templates";
+import type { ProgramTemplate } from "@/lib/templates";
 import type { ExerciseHistory } from "@/lib/history";
 import Logger, { type Receipt } from "@/components/Logger";
+import SegmentedBar from "@/components/SegmentedBar";
 
 export default function Dashboard({
   userId,
   weeklyCount,
   monthlyCount,
   history,
+  templates,
 }: {
   userId: string;
   weeklyCount: number;
   monthlyCount: number;
   history: ExerciseHistory;
+  templates: ProgramTemplate[]; // earned routines; empty until unlocked (DD-037)
 }) {
   const stored = useWorkoutStore((s) => s.activeWorkout);
   const startWorkout = useWorkoutStore((s) => s.startWorkout);
@@ -31,7 +34,7 @@ export default function Dashboard({
   function startFromTemplate(template: ProgramTemplate) {
     startWorkout(userId, template.name);
     const { addExercise } = useWorkoutStore.getState();
-    template.exercises.forEach((ex) => addExercise(ex.exerciseId, ex.label, ex.variation));
+    template.exercises.forEach((ex) => addExercise(ex.exerciseId, ex.label));
     window.scrollTo(0, 0);
   }
 
@@ -48,32 +51,6 @@ export default function Dashboard({
         Start blank
       </button>
 
-      <section aria-labelledby="templates" className="space-y-3">
-        <h2 id="templates" className="label">
-          Templates
-        </h2>
-        <ul className="border-b border-[var(--divider)]">
-          {DEFAULT_TEMPLATES.map((t) => (
-            <li key={t.id} className="border-t border-[var(--divider)]">
-              <button
-                type="button"
-                onClick={() => startFromTemplate(t)}
-                aria-label={`Start ${t.name}`}
-                className="press grid w-full grid-cols-[1fr_auto] items-center gap-4 py-4 text-left"
-              >
-                <span className="min-w-0 space-y-1">
-                  <span className="block text-lg font-bold leading-tight tracking-[-0.01em]">{t.name}</span>
-                  <span className="block truncate text-xs text-[var(--muted)]">
-                    {t.exercises.length} EX · {t.exercises.map((e) => e.label.toUpperCase()).join(" / ")}
-                  </span>
-                </span>
-                <span className="label text-[var(--fg)]">Start →</span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      </section>
-
       <section aria-labelledby="goals" className="space-y-3">
         <div className="flex items-baseline justify-between">
           <h2 id="goals" className="label">
@@ -88,6 +65,38 @@ export default function Dashboard({
           <GoalCell label="Monthly goal" count={monthlyCount} target={goals.monthlyWorkoutTarget} />
         </div>
       </section>
+
+      {templates.length > 0 && (
+        <section aria-labelledby="routines" className="space-y-3">
+          <div className="flex items-baseline justify-between">
+            <h2 id="routines" className="label">
+              Your routines
+            </h2>
+            <span className="label">From your sessions</span>
+          </div>
+          <ul className="border-b border-[var(--divider)]">
+            {templates.map((t) => (
+              <li key={t.id} className="border-t border-[var(--divider)]">
+                <button
+                  type="button"
+                  onClick={() => startFromTemplate(t)}
+                  aria-label={`Start ${t.name}`}
+                  className="press grid w-full grid-cols-[1fr_auto] items-center gap-4 py-3 text-left"
+                >
+                  <span className="min-w-0">
+                    <span className="block text-lg font-bold leading-tight tracking-[-0.01em]">{t.name}</span>
+                    <span className="label mt-1 block">
+                      {t.exercises.length} EX · Done {t.timesDone}×
+                    </span>
+                    <span className="mt-1 block truncate text-xs text-[var(--muted)]">{t.exercises.map((e) => e.label).join(" / ")}</span>
+                  </span>
+                  <span className="label text-[var(--fg)]">Start →</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
     </section>
   );
 }
@@ -101,25 +110,6 @@ function GoalCell({ label, count, target }: { label: string; count: number; targ
         <span className="text-base font-semibold text-[var(--muted)]"> / {target}</span>
       </div>
       <SegmentedBar count={count} target={target} />
-    </div>
-  );
-}
-
-// One segment per workout when they fit; a plain bar for big monthly targets.
-function SegmentedBar({ count, target }: { count: number; target: number }) {
-  const done = Math.min(count, target);
-  if (target > 16) {
-    return (
-      <div role="img" aria-label={`${done} of ${target}`} className="h-2 bg-[var(--divider)]">
-        <div className="h-full bg-[var(--fg)]" style={{ width: `${(done / target) * 100}%` }} />
-      </div>
-    );
-  }
-  return (
-    <div role="img" aria-label={`${done} of ${target}`} className="flex h-2 gap-[2px]">
-      {Array.from({ length: target }, (_, i) => (
-        <span key={i} className={`flex-1 ${i < done ? "bg-[var(--fg)]" : "bg-[var(--divider)]"}`} />
-      ))}
     </div>
   );
 }
