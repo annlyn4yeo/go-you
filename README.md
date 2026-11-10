@@ -1,16 +1,22 @@
 # GO—YOU
 
-**Train. Log. Progress.** A minimal strength-training logger. Start a workout (blank or from a template),
-log sets as you go, then track progress with stats, PRs and weekly/monthly goals.
+**Train. Log. Progress.** A mobile-first strength-training logger built for the gym floor. Start a workout
+(blank or from a template), log sets with one thumb, and see your PRs the moment they happen.
 
 ## Features
 
-- **Live workout logging:** add exercises by name, log reps × weight (kg or lb), and edit or remove sets as you go
-- **Program templates:** start a session from built-in Upper / Lower / Push / Pull templates
-- **Workout log:** history of every session with full set detail
-- **Stats:** workouts, total volume, average session length, weekly volume trend, top exercises,
-  estimated 1RM (Epley) and PR events, filterable by range and display unit
-- **Goals:** weekly and monthly workout targets with progress on the dashboard
+- **One-thumb logging:** sets are pre-filled from your last session (`LAST · 3 × 8 @ 80 KG`), with ± steppers,
+  one remembered kg/lb unit, and bodyweight sets (0 kg = BW)
+- **Live PRs:** a set that beats your all-time best estimated 1RM is marked as a PR on the spot
+- **Never lose a set:** the workout in progress is kept on the device through reloads and bad gym Wi-Fi. Removed sets can
+  be undone, and a failed save keeps everything with a retry
+- **Finish receipt:** time, sets, volume and PRs for the session, before and after saving
+- **Program templates:** start from built-in Upper / Lower / Push / Pull templates
+- **Workout log:** every session by month, with full set detail and PR sets marked
+- **Stats:** personal records, workouts, volume, average session, weekly volume trend and top exercises,
+  by range (7D / 30D / 90D / ALL) and unit
+- **Goals:** weekly and monthly workout targets tracked on the Train screen
+- **Accessible:** labelled controls, visible focus, 44–56 px touch targets, screen-reader announcements, and reduced-motion support
 - **Accounts:** email + password. An account is created automatically on first sign-in
 
 ## Tech stack

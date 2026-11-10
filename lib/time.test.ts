@@ -1,11 +1,14 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { dayIn, weekStart, monthStart, safeTimeZone, formatDateTime } from "./time.ts";
+import { dayIn, weekStart, monthStart, safeTimeZone, formatDateTime, formatDayLabel, formatDayMonth, formatTime } from "./time.ts";
 
 test("a junk Accept-Language never crashes date formatting", () => {
   const d = new Date("2026-11-10T14:02:00Z");
   assert.match(formatDateTime(d, "Asia/Kolkata", "*"), /19:32/);
   assert.match(formatDateTime(d, "UTC", "en-US"), /2:02/);
+  assert.equal(formatDayLabel(d, "Asia/Kolkata"), "TUE 10 NOV");
+  assert.equal(formatTime(d, "Asia/Kolkata"), "19:32");
+  assert.equal(formatDayMonth(new Date("2026-09-14T12:00:00Z"), "UTC"), "14 SEP");
 });
 
 test("week and month start in the user's zone", () => {

@@ -1,19 +1,16 @@
 import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { dayIn, weekStart } from "@/lib/time";
+import { e1rmKg, toKg, type Unit } from "@/lib/lift";
 
 export type Range = "7d" | "30d" | "90d" | "all";
-export type Unit = "kg" | "lb";
 
-export const KG_PER_LB = 0.45359237;
 export const workoutsTag = (userId: string) => `workouts:${userId}`;
 
 export const resolveRange = (v: string | undefined): Range =>
   v === "7d" || v === "30d" || v === "90d" || v === "all" ? v : "90d";
 export const resolveUnit = (v: string | undefined): Unit => (v === "lb" ? "lb" : "kg");
-export const fromKg = (kg: number, unit: Unit) => (unit === "lb" ? kg / KG_PER_LB : kg);
 
-const toKg = (weight: number, unit: string) => (unit === "lb" ? weight * KG_PER_LB : weight);
 const DAYS: Record<Exclude<Range, "all">, number> = { "7d": 7, "30d": 30, "90d": 90 };
 
 // All values in kg; the page converts to the display unit.
@@ -57,7 +54,7 @@ async function computeStats(userId: string, range: Range, tz: string) {
       t.workouts.add(w.id);
       for (const s of ex.sets) {
         const kg = toKg(s.weight, s.unit);
-        const e1rm = kg * (1 + s.reps / 30); // Epley
+        const e1rm = e1rmKg(s.weight, s.reps, s.unit);
         totalVolumeKg += kg * s.reps;
         weekly.set(week, (weekly.get(week) ?? 0) + kg * s.reps);
         t.sets += 1;

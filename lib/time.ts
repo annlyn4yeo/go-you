@@ -25,14 +25,34 @@ export function weekStart(day: string): string {
 export const monthStart = (day: string) => `${day.slice(0, 8)}01`;
 
 // `locale` comes from the Accept-Language header, so it may be junk ("*"): fall back instead of crashing the page.
-export function formatDateTime(date: Date, tz: string, locale?: string): string {
-  const opts = { dateStyle: "medium", timeStyle: "short", timeZone: tz } as const;
+export function formatIn(date: Date, tz: string, opts: Intl.DateTimeFormatOptions, locale?: string): string {
   try {
-    return new Intl.DateTimeFormat(locale, opts).format(date);
+    return new Intl.DateTimeFormat(locale, { ...opts, timeZone: tz }).format(date);
   } catch {
-    return new Intl.DateTimeFormat("en-GB", opts).format(date);
+    return new Intl.DateTimeFormat("en-GB", { ...opts, timeZone: tz }).format(date);
   }
 }
+
+export const formatDateTime = (date: Date, tz: string, locale?: string) =>
+  formatIn(date, tz, { dateStyle: "medium", timeStyle: "short" }, locale);
+
+// Fixed English parts so labels keep a 3-letter rhythm ("SEP", never "SEPT").
+function partsIn(date: Date, tz: string, opts: Intl.DateTimeFormatOptions) {
+  const parts = new Intl.DateTimeFormat("en-US", { ...opts, timeZone: tz }).formatToParts(date);
+  return Object.fromEntries(parts.map((p) => [p.type, p.value.toUpperCase()]));
+}
+
+// "TUE 10 NOV" and "10 NOV": the label style used in lists.
+export function formatDayLabel(date: Date, tz: string) {
+  const p = partsIn(date, tz, { weekday: "short", day: "numeric", month: "short" });
+  return `${p.weekday} ${p.day} ${p.month}`;
+}
+export function formatDayMonth(date: Date, tz: string) {
+  const p = partsIn(date, tz, { day: "numeric", month: "short" });
+  return `${p.day} ${p.month}`;
+}
+
+export const formatTime = (date: Date, tz: string) => formatIn(date, tz, { hour: "2-digit", minute: "2-digit", hourCycle: "h23" }, "en-GB");
 
 // Client only: lets server components bucket weeks in the user's zone.
 export function rememberTimeZone() {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { exerciseName } from "@/lib/lift";
 
 function normalizeExercise(input: string) {
   return input
@@ -12,52 +13,57 @@ function normalizeExercise(input: string) {
 
 export default function AddExerciseInput({
   onAdd,
+  suggestions = [],
 }: {
   onAdd: (exerciseId: string, label: string) => void;
+  suggestions?: string[]; // slugs already in the user's history, so names don't fork ("bench" vs "bench press")
 }) {
   const [value, setValue] = useState("");
   const [error, setError] = useState<string | null>(null);
 
-  function handleSubmit() {
-    if (!value.trim()) {
-      setError("Exercise name cannot be empty");
-      return;
-    }
-
+  function submit(e: React.FormEvent) {
+    e.preventDefault();
     const normalized = normalizeExercise(value);
-
-    if (!normalized) {
-      setError("Invalid exercise name");
-      return;
-    }
-
+    if (!normalized) return setError("Type an exercise name.");
     onAdd(normalized, value.trim());
-
     setValue("");
     setError(null);
   }
 
   return (
-    <div className="space-y-2">
-      <label className="block text-sm font-medium">Add exercise</label>
-
-      <input
-        type="text"
-        placeholder="Type exercise name and press Enter"
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
-        className="
-          w-full
-          border border-[var(--divider)]
-          px-4 py-3
-          text-sm
-          outline-none
-          focus:border-[var(--fg)]
-        "
-      />
-
-      {error && <div className="text-xs text-red-600">{error}</div>}
-    </div>
+    <form onSubmit={submit} className="space-y-2">
+      <label htmlFor="add-exercise" className="label block">
+        Add exercise
+      </label>
+      <div className="grid grid-cols-[1fr_auto] gap-2">
+        <input
+          id="add-exercise"
+          type="text"
+          list="known-exercises"
+          autoComplete="off"
+          enterKeyHint="done"
+          placeholder="e.g. Cable fly"
+          value={value}
+          onChange={(e) => {
+            setValue(e.target.value);
+            setError(null);
+          }}
+          className="field h-[var(--tap-lg)]"
+        />
+        <button type="submit" className="btn btn-lg px-5">
+          Add
+        </button>
+      </div>
+      <datalist id="known-exercises">
+        {suggestions.map((slug) => (
+          <option key={slug} value={exerciseName(slug)} />
+        ))}
+      </datalist>
+      {error && (
+        <p role="alert" className="text-sm text-[var(--danger)]">
+          {error}
+        </p>
+      )}
+    </form>
   );
 }

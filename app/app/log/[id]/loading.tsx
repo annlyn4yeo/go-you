@@ -1,5 +1,5 @@
 import LoadingRows from "@/components/LoadingRows";
 
 export default function Loading() {
-  return <LoadingRows title="Workout" />;
+  return <LoadingRows title="WORKOUT" />;
 }
