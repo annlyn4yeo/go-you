@@ -1,36 +1,85 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# GO—YOU
 
-## Getting Started
+**Train. Log. Progress.** A minimal strength-training logger. Start a workout (blank or from a template),
+log sets as you go, then track progress with stats, PRs and weekly/monthly goals.
 
-First, run the development server:
+## Features
+
+- **Live workout logging:** add exercises by name, log reps × weight (kg or lb), and edit or remove sets as you go
+- **Program templates:** start a session from built-in Upper / Lower / Push / Pull templates
+- **Workout log:** history of every session with full set detail
+- **Stats:** workouts, total volume, average session length, weekly volume trend, top exercises,
+  estimated 1RM (Epley) and PR events, filterable by range and display unit
+- **Goals:** weekly and monthly workout targets with progress on the dashboard
+- **Accounts:** email + password. An account is created automatically on first sign-in
+
+## Tech stack
+
+- [Next.js 16](https://nextjs.org) (App Router) · React 19 · TypeScript
+- Tailwind CSS 3
+- NextAuth v4 (credentials, JWT sessions) · bcrypt
+- Prisma 5 · PostgreSQL ([Neon](https://neon.tech))
+- Zustand for live workout state
+- Deployed on [Vercel](https://vercel.com)
+
+## Getting started
+
+### Prerequisites
+- Node.js 20+
+- A PostgreSQL database (e.g. a free Neon project)
+
+### Setup
+
+```bash
+npm install
+```
+
+Create a `.env` file in the project root:
+
+```bash
+DATABASE_URL="postgresql://USER:PASSWORD@HOST/DB?sslmode=require"
+NEXTAUTH_SECRET="a-long-random-string"
+NEXTAUTH_URL="http://localhost:3000"
+```
+
+Create the database tables from the Prisma schema:
+
+```bash
+npx prisma db push
+```
+
+Run the dev server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) and sign in with any email and password to create an account.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Scripts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Script | Description |
+|---|---|
+| `npm run dev` | Start the development server |
+| `npm run build` | Generate the Prisma client and build for production |
+| `npm run start` | Start the production server |
+| `npm run lint` | Run ESLint |
 
-## Learn More
+## Project structure
 
-To learn more about Next.js, take a look at the following resources:
+```
+app/
+  page.tsx            Sign-in screen
+  app/                Authenticated app: dashboard, log, stats, settings
+  api/                Route handlers: auth, workouts, stats
+components/           Shared UI (app shell, set row, exercise input)
+domain/               Workout domain types
+state/                Zustand store for the active workout
+lib/                  Auth config, Prisma client, goals and templates
+prisma/               Database schema
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Contributing
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+`main` is protected by convention. Create a branch (`feature/…`, `fix/…`, `chore/…`, `docs/…`),
+then open a pull request into `main`. Run `npm run lint` and `npm run build` before opening the PR.
