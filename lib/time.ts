@@ -54,6 +54,14 @@ export function formatDayMonth(date: Date, tz: string) {
 
 export const formatTime = (date: Date, tz: string) => formatIn(date, tz, { hour: "2-digit", minute: "2-digit", hourCycle: "h23" }, "en-GB");
 
+// "1:31", "34:12", or "1:02:05" past an hour (no leading zero on the first unit).
+export function formatClock(ms: number) {
+  const s = Math.max(0, Math.floor(ms / 1000));
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const m = Math.floor(s / 60);
+  return s >= 3600 ? `${Math.floor(s / 3600)}:${pad(m % 60)}:${pad(s % 60)}` : `${m}:${pad(s % 60)}`;
+}
+
 // Client only: lets server components bucket weeks in the user's zone.
 export function rememberTimeZone() {
   const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;

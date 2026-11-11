@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { Workout, ExerciseInstance, SetEntry } from "@/domain/workout";
 import type { Unit } from "@/lib/lift";
+import { DEFAULT_REST } from "@/lib/rest";
 
 type ActiveWorkout = {
   workout: Workout;
@@ -13,8 +14,10 @@ type ActiveWorkout = {
 interface WorkoutState {
   activeWorkout: ActiveWorkout | null;
   unit: Unit; // remembered across workouts
+  restTarget: number; // seconds, remembered across workouts
 
   setUnit: (unit: Unit) => void;
+  setRestTarget: (seconds: number) => void;
   startWorkout: (userId: string, title?: string) => void;
   endWorkout: () => void;
   addExercise: (exerciseId: string, label: string, variation?: string) => string | undefined;
@@ -40,8 +43,10 @@ export const useWorkoutStore = create<WorkoutState>()(
       return {
         activeWorkout: null,
         unit: "kg",
+        restTarget: DEFAULT_REST,
 
         setUnit: (unit) => set({ unit }),
+        setRestTarget: (restTarget) => set({ restTarget }),
 
         startWorkout: (userId, title) =>
           set({
