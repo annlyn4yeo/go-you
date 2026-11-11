@@ -10,14 +10,12 @@ import AddExerciseInput from "@/components/AddExerciseInput";
 import NumberField from "@/components/NumberField";
 import SetRow from "@/components/SetRow";
 import StatGrid from "@/components/StatGrid";
+import RestTimer from "@/components/RestTimer";
+import { useNow } from "@/lib/useNow";
+import { formatClock } from "@/lib/time";
 
 export type Receipt = { duration: string; sets: number; prs: number; prNames: string[] };
 
-const pad = (n: number) => String(n).padStart(2, "0");
-function clock(ms: number) {
-  const s = Math.max(0, Math.floor(ms / 1000));
-  return `${Math.floor(s / 3600) ? `${Math.floor(s / 3600)}:` : ""}${pad(Math.floor(s / 60) % 60)}:${pad(s % 60)}`;
-}
 const minutes = (startedAt: string) => `${durationMinutes(Date.parse(startedAt), Date.now())}M`;
 const buzz = (pattern: number | number[]) => navigator.vibrate?.(pattern);
 
@@ -68,6 +66,9 @@ export default function Logger({
     (id) => active.exercises.find((e) => e.id === id)!.label.toUpperCase(),
   );
   const volumeKg = active.sets.reduce((sum, s) => sum + toKg(s.weight, s.unit) * s.reps, 0);
+  // Rest counts from the newest set (sets are kept in time order).
+  const lastSetAt = active.sets.at(-1)?.createdAt;
+  useWakeLock();
 
   function handleAdd(exerciseId: string, label: string) {
     const id = addExercise(exerciseId, label);
@@ -127,18 +128,23 @@ export default function Logger({
 
   return (
     <section className="space-y-8">
-      {/* Workout bar: where am I, how long, how much, and the way out. */}
-      <div className="sticky top-0 z-30 -mx-4 flex h-[var(--tap-lg)] items-center gap-3 bg-[var(--fg)] px-4 text-[var(--bg)] md:mx-0">
-        <span className="min-w-0 flex-1 truncate text-sm font-bold uppercase tracking-[0.08em]">{active.title ?? "Workout"}</span>
-        <WorkoutClock startedAt={active.workout.startedAt} />
-        <span className="text-xs font-semibold tabular">{active.sets.length} SETS</span>
-        <button
-          type="button"
-          onClick={() => setFinishing(true)}
-          className="press h-10 bg-[var(--bg)] px-3 text-xs font-bold uppercase tracking-[0.12em] text-[var(--fg)]"
-        >
-          Finish
-        </button>
+      {/* Workout bar (+ rest strip once a set is logged): where am I, how long, how much, and the way out. */}
+      <div className="sticky top-0 z-30 -mx-4 md:mx-0">
+        <div className="flex h-[var(--tap-lg)] items-center gap-3 bg-[var(--fg)] px-4 text-[var(--bg)]">
+          <span className="min-w-0 flex-1 truncate text-sm font-bold uppercase tracking-[0.08em]">{active.title ?? "Workout"}</span>
+          <WorkoutClock startedAt={active.workout.startedAt} />
+          <span className="text-xs font-semibold tabular">
+            {active.sets.length} {active.sets.length === 1 ? "SET" : "SETS"}
+          </span>
+          <button
+            type="button"
+            onClick={() => setFinishing(true)}
+            className="press h-10 bg-[var(--bg)] px-3 text-xs font-bold uppercase tracking-[0.12em] text-[var(--fg)]"
+          >
+            Finish
+          </button>
+        </div>
+        {lastSetAt && <RestTimer lastSetAt={lastSetAt} />}
       </div>
 
       <div className="flex items-center justify-between">
@@ -272,16 +278,38 @@ export default function Logger({
 }
 
 function WorkoutClock({ startedAt }: { startedAt: string }) {
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    const t = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(t);
-  }, []);
+  const now = useNow();
   return (
     <time className="text-sm font-semibold tabular" aria-label="Elapsed time">
-      {clock(now - Date.parse(startedAt))}
+      {formatClock(now - Date.parse(startedAt))}
     </time>
   );
+}
+
+// Keep the screen on during a workout (re-acquired when the page becomes visible again; ignored where unsupported).
+function useWakeLock() {
+  useEffect(() => {
+    let lock: WakeLockSentinel | null = null;
+    let closed = false;
+    const acquire = () => {
+      if (document.visibilityState !== "visible") return;
+      navigator.wakeLock?.request("screen").then(
+        // A lock that arrives after the screen closed is released straight away, so it can't leak.
+        (l) => {
+          if (closed) l.release().catch(() => {});
+          else lock = l;
+        },
+        () => {},
+      );
+    };
+    acquire();
+    document.addEventListener("visibilitychange", acquire);
+    return () => {
+      closed = true;
+      document.removeEventListener("visibilitychange", acquire);
+      lock?.release().catch(() => {});
+    };
+  }, []);
 }
 
 function ExerciseBlock({
