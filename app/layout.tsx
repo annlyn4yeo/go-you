@@ -12,6 +12,9 @@ const spaceGrotesk = Space_Grotesk({
 export const metadata: Metadata = {
   title: { default: "GO—YOU", template: "%s — GO—YOU" },
   description: "Train. Log. Progress.",
+  icons: { icon: "/icons/icon-192.png", apple: "/icons/apple-touch-icon.png" },
+  // iOS has no manifest-based install: these make "Add to Home Screen" open full screen with the right name.
+  appleWebApp: { capable: true, title: "GO—YOU", statusBarStyle: "default" },
 };
 
 export const viewport: Viewport = {

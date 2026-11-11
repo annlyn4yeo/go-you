@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#ffffff" />
+    <title>Offline — GO—YOU</title>
+    <!-- Served by sw.js when there is no network (DD-039). Plain HTML on purpose: no framework code that could fail to load offline. -->
+    <style>
+      @font-face {
+        font-family: "Space Grotesk";
+        src: url(/fonts/space-grotesk-latin.woff2) format("woff2");
+        font-weight: 300 700;
+      }
+      :root { --bg: #fff; --fg: #000; --muted: #6b6b6b; --tap-lg: 56px; }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; background: var(--bg); color: var(--fg); font-family: "Space Grotesk", system-ui, sans-serif; }
+      main { min-height: 100dvh; padding: 24px 16px 40px; }
+      .brand { margin: 0; font-size: 14px; font-weight: 700; letter-spacing: 0.025em; }
+      section { max-width: 420px; margin: 18vh auto 0; }
+      h1 { margin: 0 0 24px; font-size: 60px; font-weight: 700; line-height: 0.95; letter-spacing: -0.02em; text-transform: uppercase; }
+      p { margin: 0 0 24px; color: var(--muted); font-size: 16px; line-height: 1.5; }
+      .btn { display: flex; width: 100%; min-height: var(--tap-lg); align-items: center; justify-content: center; margin-top: 12px;
+        border: 1px solid var(--fg); background: var(--bg); color: var(--fg); font: 700 14px/1 "Space Grotesk", system-ui, sans-serif;
+        letter-spacing: 0.08em; text-transform: uppercase; text-decoration: none; cursor: pointer; transition: transform 100ms cubic-bezier(0.23, 1, 0.32, 1); }
+      .btn:active { transform: scale(0.97); }
+      .primary { background: var(--fg); color: var(--bg); }
+      :focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
+      @media (prefers-reduced-motion: reduce) { .btn:active { transform: none; } }
+    </style>
+  </head>
+  <body>
+    <main>
+      <p class="brand">GO—YOU</p>
+      <section>
+        <h1>Offline</h1>
+        <p>No connection right now. A workout in progress is safe on this phone, and Train still works.</p>
+        <a class="btn primary" href="/app">Back to Train</a>
+        <button class="btn" type="button" onclick="location.reload()">Try again</button>
+      </section>
+    </main>
+  </body>
+</html>

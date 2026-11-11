@@ -7,6 +7,7 @@ import { TEMPLATE_UNLOCK_SESSIONS } from "@/lib/templates";
 import GoalsForm from "@/components/GoalsForm";
 import SegmentedBar from "@/components/SegmentedBar";
 import SignOutButton from "@/components/SignOutButton";
+import InstallApp from "@/components/InstallApp";
 
 export const metadata: Metadata = { title: "Goals" };
 
@@ -66,6 +67,8 @@ export default async function GoalsPage() {
           </>
         )}
       </section>
+
+      <InstallApp />
 
       {/* On mobile the sidebar (and its log out) is hidden, so the account lives here. */}
       <section className="space-y-3 border-t border-[var(--divider)] pt-6 md:hidden">
