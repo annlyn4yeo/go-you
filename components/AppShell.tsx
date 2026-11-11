@@ -54,6 +54,8 @@ export default function AppShell({ children, user }: { children: React.ReactNode
   useEffect(() => {
     rememberTimeZone();
     useWorkoutStore.persist.rehydrate();
+    // Offline Train + installability (DD-039). Production only, so dev reloads never serve a stale copy.
+    if (process.env.NODE_ENV === "production") navigator.serviceWorker?.register("/sw.js").catch(() => {});
   }, []);
 
   return (
