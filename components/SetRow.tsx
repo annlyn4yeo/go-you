@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useWorkoutStore } from "@/state/workoutStore";
 import type { SetEntry } from "@/domain/workout";
 import { formatLoad, setProblem } from "@/lib/lift";
@@ -163,5 +163,47 @@ export default function SetRow({
         </button>
       </div>
     </li>
+  );
+}
+
+// What's left of a removed set (DD-063): same row, same height, so nothing below moves. The value struck through, and
+// Undo in exactly the column DEL was in, so the thumb that removed it can put it back without moving.
+// Stays until the next set is logged or something else is removed: no timer to race.
+export function RemovedSetRow({ set, onUndo }: { set: SetEntry; onUndo: () => void }) {
+  return (
+    <li className="ghost border-t border-[var(--divider)]">
+      <div className="grid h-12 grid-cols-[2rem_1fr_auto] items-center">
+        <span aria-hidden="true" className="pl-1 text-xs font-semibold text-[var(--muted)]">
+          –
+        </span>
+        <span className="flex min-w-0 items-baseline gap-3">
+          <s className="text-lg font-semibold tabular text-[var(--muted)]">
+            {set.reps} × {formatLoad(set.weight, set.unit)}
+          </s>
+          <span className="label">Removed</span>
+        </span>
+        <UndoButton label={`Undo: put back ${set.reps} × ${formatLoad(set.weight, set.unit)}`} onUndo={onUndo} className="w-14" />
+      </div>
+    </li>
+  );
+}
+
+// Undo, shared by removed sets and exercises. Keyboard users whose DEL/Remove button just vanished land on it (focus would
+// otherwise fall to the page); a finger tap leaves nothing visibly focused.
+export function UndoButton({ label, onUndo, className = "" }: { label: string; onUndo: () => void; className?: string }) {
+  const ref = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (!document.activeElement || document.activeElement === document.body) ref.current?.focus({ preventScroll: true });
+  }, []);
+  return (
+    <button
+      ref={ref}
+      type="button"
+      onClick={onUndo}
+      aria-label={label}
+      className={`press h-11 text-xs font-bold uppercase tracking-[0.16em] ${className}`}
+    >
+      <span className="border-b border-current pb-0.5">Undo</span>
+    </button>
   );
 }

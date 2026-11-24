@@ -203,18 +203,9 @@ output,
   margin-left: -0.06em; /* optical: the big numeral's side bearing, so it lines up with the text above */
 }
 
-/* Undo bar: its rule shrinks over the undo window. */
-@keyframes drain {
-  from {
-    transform: scaleX(1);
-  }
-  to {
-    transform: scaleX(0);
-  }
-}
-.drain {
-  transform-origin: left;
-  animation: drain 5s linear forwards;
+/* Removed row (DD-063): fades in where the set or exercise was, so the list never jumps. Opacity only. */
+.ghost {
+  animation: fade var(--dur-fast) var(--ease-out) both;
 }
 
 @media (prefers-reduced-motion: reduce) {
