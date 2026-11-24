@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useWorkoutStore } from "@/state/workoutStore";
+import { useWorkoutStore, type RemovedExercise } from "@/state/workoutStore";
 import type { ExerciseInstance, SetEntry } from "@/domain/workout";
 import type { ExerciseHistory } from "@/lib/history";
 import { durationMinutes, formatLoad, formatNumber, fromKg, sessionSummary, setProblem, toKg, type Unit } from "@/lib/lift";
@@ -10,7 +10,7 @@ import { PR_LABEL, prGain, prKinds, type Bests, type Pr, type PrKind } from "@/l
 import { sessionReport } from "@/lib/report";
 import ExercisePicker from "@/components/ExercisePicker";
 import NumberField from "@/components/NumberField";
-import SetRow from "@/components/SetRow";
+import SetRow, { RemovedSetRow, UndoButton } from "@/components/SetRow";
 import StatGrid from "@/components/StatGrid";
 import RestTimer, { type LoggedSet } from "@/components/RestTimer";
 import { useNow } from "@/lib/useNow";
@@ -42,17 +42,12 @@ export default function Logger({
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [confirmDiscard, setConfirmDiscard] = useState(false);
-  // One undo for anything removed (a set or a whole exercise): what it says, and how to put it back.
-  const [undo, setUndo] = useState<{ key: string; label: string; restore: () => void } | null>(null);
+  // The last thing removed (a set or a whole exercise). It leaves a row with Undo where it was (DD-063) until the next set
+  // is logged or something else is removed: one undo at a time, no timer.
+  const [removed, setRemoved] = useState<{ kind: "set"; entry: SetEntry } | { kind: "exercise"; snapshot: RemovedExercise } | null>(null);
   const [announce, setAnnounce] = useState("");
   const [lastLogged, setLastLogged] = useState<string | null>(null);
   const [landed, setLanded] = useState<string | null>(null); // the exercise added or moved last, so its block can flash on arrival
-
-  useEffect(() => {
-    if (!undo) return;
-    const t = setTimeout(() => setUndo(null), 5000);
-    return () => clearTimeout(t);
-  }, [undo]);
 
   useEffect(() => {
     if (!confirmDiscard) return;
@@ -129,19 +124,47 @@ export default function Logger({
   }
 
   function handleRemoveExercise(id: string) {
-    const removed = removeExercise(id);
-    if (removed) setUndo({ key: id, label: `${removed.exercise.label} removed`, restore: () => restoreExercise(removed) });
+    const snapshot = removeExercise(id);
+    if (!snapshot) return;
+    setRemoved({ kind: "exercise", snapshot });
+    setAnnounce(`${snapshot.exercise.label} removed. Undo is where it was.`);
   }
 
   function handleLogged(entry: SetEntry, pr: PrKind | null) {
     setLastLogged(entry.id);
+    setRemoved(null); // moving on: the removed row goes
     setAnnounce(`Set logged, ${entry.reps} × ${formatLoad(entry.weight, entry.unit)}${pr ? `. ${PR_LABEL[pr]}.` : ""}`);
     buzz(pr ? [0, 30, 40, 30] : 8);
   }
 
   function handleRemove(id: string) {
-    const removed = removeSet(id);
-    if (removed) setUndo({ key: id, label: "Set removed", restore: () => restoreSet(removed) });
+    const entry = removeSet(id);
+    if (!entry) return;
+    setRemoved({ kind: "set", entry });
+    setAnnounce("Set removed. Undo is in its place.");
+  }
+
+  // A removed exercise leaves one line where its block was: its name struck through, how many sets went with it, and Undo
+  // where Edit sat.
+  const ghostAt = removed?.kind === "exercise" ? Math.min(removed.snapshot.index, active.exercises.length) : -1;
+  const removedExercise = removed?.kind === "exercise" && (
+    <div className="ghost grid grid-cols-[1fr_auto] items-center gap-3 border-t-2 border-[var(--divider)] pt-2">
+      <p className="min-w-0">
+        <s className="block truncate text-xl font-bold uppercase leading-tight tracking-[-0.01em] text-[var(--muted)]">{removed.snapshot.exercise.label}</s>
+        <span className="label">
+          Removed{removed.snapshot.sets.length ? ` with ${removed.snapshot.sets.length} ${removed.snapshot.sets.length === 1 ? "set" : "sets"}` : ""}
+        </span>
+      </p>
+      <UndoButton label={`Undo: put back ${removed.snapshot.exercise.label}`} onUndo={handleUndo} className="-mr-2 px-2" />
+    </div>
+  );
+
+  function handleUndo() {
+    if (!removed) return;
+    if (removed.kind === "set") restoreSet(removed.entry);
+    else restoreExercise(removed.snapshot);
+    setRemoved(null);
+    setAnnounce(removed.kind === "set" ? "Set put back." : `${removed.snapshot.exercise.label} put back.`);
   }
 
   async function save() {
@@ -218,24 +241,29 @@ export default function Logger({
 
       <div className="space-y-8">
         {active.exercises.map((ex, i) => (
-          <ExerciseBlock
-            key={ex.id}
-            exercise={ex}
-            sets={active.sets.filter((s) => s.exerciseInstanceId === ex.id)}
-            prs={prs}
-            last={history.last[ex.exerciseId]}
-            best={history.bests[ex.exerciseId]}
-            unit={unit}
-            lastLogged={lastLogged}
-            arriving={ex.id === landed}
-            first={i === 0}
-            lastInList={i === active.exercises.length - 1}
-            onLogged={handleLogged}
-            onRemove={handleRemove}
-            onMove={(by) => handleMove(ex.id, by)}
-            onRemoveExercise={() => handleRemoveExercise(ex.id)}
-          />
+          <Fragment key={ex.id}>
+            {i === ghostAt && removedExercise}
+            <ExerciseBlock
+              exercise={ex}
+              sets={active.sets.filter((s) => s.exerciseInstanceId === ex.id)}
+              removedSet={removed?.kind === "set" && removed.entry.exerciseInstanceId === ex.id ? removed.entry : undefined}
+              prs={prs}
+              last={history.last[ex.exerciseId]}
+              best={history.bests[ex.exerciseId]}
+              unit={unit}
+              lastLogged={lastLogged}
+              arriving={ex.id === landed}
+              first={i === 0}
+              lastInList={i === active.exercises.length - 1}
+              onLogged={handleLogged}
+              onRemove={handleRemove}
+              onUndo={handleUndo}
+              onMove={(by) => handleMove(ex.id, by)}
+              onRemoveExercise={() => handleRemoveExercise(ex.id)}
+            />
+          </Fragment>
         ))}
+        {ghostAt >= active.exercises.length && removedExercise}
       </div>
 
       <section className="border-t-2 border-[var(--fg)] pt-6">
@@ -245,25 +273,6 @@ export default function Logger({
       <p role="status" aria-live="polite" className="sr-only">
         {announce}
       </p>
-
-      {undo && (
-        <div className="fixed inset-x-0 bottom-[calc(var(--tap-lg)+env(safe-area-inset-bottom))] z-40 bg-[var(--fg)] text-[var(--bg)] md:bottom-0 md:left-[220px]">
-          <div className="flex h-[var(--tap-lg)] items-center justify-between px-4">
-            <span className="min-w-0 truncate pr-3 text-xs font-semibold uppercase tracking-[0.16em]">{undo.label}</span>
-            <button
-              type="button"
-              onClick={() => {
-                undo.restore();
-                setUndo(null);
-              }}
-              className="press h-10 bg-[var(--bg)] px-4 text-xs font-bold uppercase tracking-[0.12em] text-[var(--fg)]"
-            >
-              Undo
-            </button>
-          </div>
-          <div key={undo.key} className="drain h-px bg-[var(--bg)]" />
-        </div>
-      )}
 
       {/* Finish sheet: the receipt before saving. Stays mounted so it leaves the way it came. */}
       <div
@@ -460,6 +469,7 @@ function useWakeLock() {
 function ExerciseBlock({
   exercise,
   sets,
+  removedSet,
   prs,
   last,
   best,
@@ -470,11 +480,14 @@ function ExerciseBlock({
   lastInList,
   onLogged,
   onRemove,
+  onUndo,
   onMove,
   onRemoveExercise,
 }: {
   exercise: ExerciseInstance;
   sets: SetEntry[];
+  removedSet?: SetEntry; // this exercise's just-removed set: its row stays, with Undo (DD-063)
+  onUndo: () => void;
   prs: Map<string, Pr | null>;
   last?: { reps: number; weight: number; unit: string }[];
   best?: Bests;
@@ -497,6 +510,8 @@ function ExerciseBlock({
   const [reps, setReps] = useState(seed ? String(seed.reps) : "");
   const [weight, setWeight] = useState(seedWeight != null ? String(seedWeight) : "");
   const [error, setError] = useState<string | null>(null);
+  // The removed set's row sits where it was in time: before the first set logged after it, or last (-1).
+  const removedAt = removedSet ? sets.findIndex((s) => s.createdAt > removedSet.createdAt) : -1;
 
   function log(e: React.FormEvent) {
     e.preventDefault();
@@ -557,11 +572,15 @@ function ExerciseBlock({
         </div>
       )}
 
-      {sets.length > 0 && (
+      {(sets.length > 0 || removedSet) && (
         <ol className="border-b border-[var(--divider)]">
           {sets.map((s, i) => (
-            <SetRow key={s.id} set={s} index={i} pr={prs.get(s.id)?.kind ?? null} isNew={s.id === lastLogged} onRemove={onRemove} />
+            <Fragment key={s.id}>
+              {i === removedAt && <RemovedSetRow set={removedSet!} onUndo={onUndo} />}
+              <SetRow set={s} index={i} pr={prs.get(s.id)?.kind ?? null} isNew={s.id === lastLogged} onRemove={onRemove} />
+            </Fragment>
           ))}
+          {removedSet && removedAt === -1 && <RemovedSetRow set={removedSet} onUndo={onUndo} />}
         </ol>
       )}
 
