@@ -47,6 +47,7 @@ model Workout {
   userId    String
   startedAt DateTime
   endedAt   DateTime?
+  title     String?   @db.VarChar(40) // the lifter's own name (DD-062); null = the automatic one
 
   user      User               @relation(fields: [userId], references: [id])
   exercises ExerciseInstance[]

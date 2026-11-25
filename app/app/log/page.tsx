@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { getBoard, getExerciseNames } from "@/lib/history";
 import { dayIn, formatIn, formatTime, safeTimeZone, TZ_COOKIE } from "@/lib/time";
 import { durationMinutes, exerciseName } from "@/lib/lift";
+import { workoutName } from "@/lib/workout-name";
 
 export const metadata: Metadata = { title: "Log" };
 
@@ -28,6 +29,7 @@ export default async function LogPage({ searchParams }: { searchParams: Promise<
         id: true,
         startedAt: true,
         endedAt: true,
+        title: true,
         exercises: { orderBy: { order: "asc" }, select: { exerciseId: true, _count: { select: { sets: true } } } },
       },
     }),
@@ -125,15 +127,24 @@ export default async function LogPage({ searchParams }: { searchParams: Promise<
                       const sets = w.exercises.reduce((n, e) => n + e._count.sets, 0);
                       const mins = w.endedAt && durationMinutes(w.startedAt.getTime(), w.endedAt.getTime());
                       const prs = prsByWorkout[w.id] ?? 0;
+                      const time = formatTime(w.startedAt, tz);
+                      const exercises = w.exercises
+                        .filter((e) => e._count.sets > 0)
+                        .map((e) => ({ id: e.exerciseId, name: exerciseName(e.exerciseId, names[e.exerciseId]), sets: e._count.sets }));
+                      const title = workoutName(+time.slice(0, 2), exercises, w.title); // the lifter's own type first (DD-062)
                       return (
                         <Link key={w.id} href={`/app/log/${w.id}`} className="press grid grid-cols-[1fr_auto] items-start gap-x-3 gap-y-1">
-                          <span className="line-clamp-2 text-base font-bold leading-snug tracking-[-0.01em]">
+                          <span className="min-w-0 text-base font-bold uppercase leading-snug tracking-[-0.01em] [overflow-wrap:anywhere]">
                             <span className="sr-only">{formatIn(w.startedAt, tz, { weekday: "long", day: "numeric", month: "long" }, "en-GB")}: </span>
-                            {w.exercises.map((e) => exerciseName(e.exerciseId, names[e.exerciseId])).join(", ") || "No exercises"}
+                            {title.name}
                           </span>
                           {prs > 0 ? <span className="tag mt-0.5 border-[var(--fg)] bg-[var(--fg)] text-[var(--bg)]">{prs} PR</span> : <span />}
+                          {/* The name only says "workout" when it can't tell what was trained: then the exercises say it (DD-061). */}
+                          {!title.known && exercises.length > 0 && (
+                            <span className="col-span-2 truncate text-[13px]">{exercises.map((e) => e.name).join(", ")}</span>
+                          )}
                           <span className="text-[13px] text-[var(--muted)] tabular">
-                            {formatTime(w.startedAt, tz)} · {sets} {sets === 1 ? "set" : "sets"}
+                            {time} · {sets} {sets === 1 ? "set" : "sets"}
                             {mins ? ` · ${mins} min` : ""}
                           </span>
                         </Link>

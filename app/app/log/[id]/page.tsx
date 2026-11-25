@@ -13,6 +13,8 @@ import { formatDayLabel, formatIn, formatTime, safeTimeZone, TZ_COOKIE } from "@
 import { durationMinutes, e1rmKg, exerciseName, formatLoad, formatNumber, toKg } from "@/lib/lift";
 import StatGrid from "@/components/StatGrid";
 import DeleteWorkout from "@/components/DeleteWorkout";
+import RenameWorkout from "@/components/RenameWorkout";
+import { timeOfDay, workoutName } from "@/lib/workout-name";
 
 export const metadata: Metadata = { title: "Workout" };
 
@@ -38,6 +40,8 @@ export default async function WorkoutDetailPage({ params }: { params: Promise<{ 
   const volumeKg = sets.reduce((n, s) => n + toKg(s.weight, s.unit) * s.reps, 0);
   const mins = workout.endedAt && durationMinutes(workout.startedAt.getTime(), workout.endedAt.getTime());
   const year = formatIn(workout.startedAt, tz, { year: "numeric" }, "en-GB");
+  const time = formatTime(workout.startedAt, tz);
+  const auto = workoutName(+time.slice(0, 2), exercises.map((e) => ({ id: e.exerciseId, name: exerciseName(e.exerciseId, names[e.exerciseId]), sets: e.sets.length })));
 
   return (
     <section className="space-y-8">
@@ -45,12 +49,14 @@ export default async function WorkoutDetailPage({ params }: { params: Promise<{ 
         ← Log
       </Link>
 
-      <header className="space-y-2">
-        <p className="label">
-          {formatDayLabel(workout.startedAt, tz)} {year} · {formatTime(workout.startedAt, tz)}
-        </p>
-        <h1 className="display text-5xl">Workout</h1>
-      </header>
+      <RenameWorkout
+        id={workout.id}
+        meta={`${formatDayLabel(workout.startedAt, tz)} ${year} · ${time}`}
+        time={timeOfDay(+time.slice(0, 2))}
+        auto={auto.type}
+        known={auto.known}
+        title={workout.title}
+      />
 
       <StatGrid
         items={[

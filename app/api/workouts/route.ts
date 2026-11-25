@@ -9,6 +9,7 @@ import { revalidateTag } from "next/cache";
 import { Prisma } from "@prisma/client";
 import { workoutsTag } from "@/lib/stats";
 import { validateWorkout, type WorkoutBody } from "@/lib/validate-workout";
+import { cleanTitle } from "@/lib/workout-name";
 
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
@@ -75,6 +76,19 @@ export async function POST(req: Request) {
   await sideWrites; // before the caches are cleared, so the next page shows the names
   revalidateTag(workoutsTag(userId), { expire: 0 });
   return NextResponse.json({ id: workout.id });
+}
+
+// PATCH {id, title}: the lifter's own name for a saved workout (DD-062); title null or empty = the automatic name again.
+// Scoped to the user: someone else's id (or a gone one) is a 404. No cache holds titles, so nothing to revalidate.
+export async function PATCH(req: Request) {
+  const userId = (await getServerSession(authOptions))?.user?.id;
+  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const body = (await req.json().catch(() => null)) as { id?: unknown; title?: unknown } | null;
+  const title = cleanTitle(body?.title);
+  if (typeof body?.id !== "string" || title === undefined) return NextResponse.json({ error: "Invalid name" }, { status: 400 });
+  const { count } = await prisma.workout.updateMany({ where: { id: body.id, userId }, data: { title } });
+  if (!count) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  return NextResponse.json({ title });
 }
 
 // DELETE ?id=<workout>: remove a saved workout and its sets (P2-04). No cascades in the schema, so children go first, in one transaction.
