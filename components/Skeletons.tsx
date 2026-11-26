@@ -115,15 +115,14 @@ export function LogSkeleton() {
           <span className="flex items-end gap-1.5"><span className="inline-block h-3 w-1.5 bg-[var(--divider)]" />Record</span>
         </p>
         <ul aria-hidden="true" className="mt-4 border-b border-[var(--divider)]">
-          {[2, 1, 2, 1, 2].map((lines, i) => (
+          {["w-3/5", "w-1/2", "w-4/5", "w-1/2", "w-3/5"].map((w, i) => (
             <li key={i} className="grid grid-cols-[3.25rem_1fr] border-t border-[var(--divider)] py-3.5">
               <span>
                 <Line h="h-[27px]" bar="h-6" w="w-7" />
                 <Line h="h-4" bar="h-2.5" w="w-7" className="mt-1.5" />
               </span>
               <span>
-                <Line h="h-[22px]" w="w-11/12" />
-                {lines === 2 && <Line h="h-[22px]" w="w-1/2" />}
+                <Line h="h-[22px]" w={w} />
                 <Line h="h-[19.5px]" bar="h-2.5" w="w-2/5" className="mt-1" />
               </span>
             </li>
@@ -184,7 +183,7 @@ export function WorkoutSkeleton() {
       <span className="label inline-flex min-h-[var(--tap)] items-center text-[var(--fg)]">← Log</span>
       <header className="space-y-2">
         <Line h="h-4" bar="h-2.5" w="w-48" />
-        <h1 className="display text-5xl">Workout</h1>
+        <Line h="h-[46px]" bar="h-9" w="w-4/5" />
       </header>
       <StatGridFrame labels={["Time", "Sets", "Vol kg"]} />
       {[4, 3].map((sets, i) => (
